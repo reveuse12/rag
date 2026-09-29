@@ -12,12 +12,9 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Dev bypass for seeded users
+    // Dev bypass for real admin account
     const SEEDED_EMAILS = [
       'prayag129787@gmail.com',
-      'aarav@surat.in',
-      'diya@surat.in',
-      'rohan@svnit.ac.in',
     ];
 
     if (SEEDED_EMAILS.includes(normalizedEmail) && (otp === '123456' || otp === '000000')) {

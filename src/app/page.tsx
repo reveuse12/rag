@@ -1066,11 +1066,11 @@ export default function LandingPage() {
             </p>
             <div className="flex items-center gap-3 pt-4 border-t border-border">
               <div className="w-9 h-9 rounded-full bg-accent/20 text-accent-foreground flex items-center justify-center font-bold text-xs">
-                AM
+                PS
               </div>
               <div>
-                <div className="text-xs font-bold text-foreground">Aarav M.</div>
-                <div className="text-[11px] text-muted-foreground">Lead, Weekend Trekkers</div>
+                <div className="text-xs font-bold text-foreground">Pratik S.</div>
+                <div className="text-[11px] text-muted-foreground">Lead, Surat Cycling Club</div>
               </div>
             </div>
           </div>

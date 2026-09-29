@@ -22,24 +22,6 @@ export async function POST(request: NextRequest) {
         avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
         role: 'admin',
       },
-      'aarav@surat.in': {
-        id: 'a0000000-0000-0000-0000-000000000002',
-        display_name: 'Aarav M.',
-        avatar_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
-        role: 'member',
-      },
-      'diya@surat.in': {
-        id: 'a0000000-0000-0000-0000-000000000003',
-        display_name: 'Diya P.',
-        avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-        role: 'member',
-      },
-      'rohan@svnit.ac.in': {
-        id: 'a0000000-0000-0000-0000-000000000004',
-        display_name: 'Rohan (SVNIT)',
-        avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-        role: 'member',
-      },
     };
 
     const seededUser = SEEDED_ACCOUNTS[normalizedEmail];

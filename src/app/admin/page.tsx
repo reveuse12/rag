@@ -28,10 +28,10 @@ export default function AdminDashboardPage() {
 
   // Founding Code generator state
   const [foundingCodes, setFoundingCodes] = useState([
-    { code: 'FOUNDER2026', used: true, user: 'demo@citycircle.com', date: '2026-09-20' },
-    { code: 'SURATVIP', used: true, user: 'aarav@surat.in', date: '2026-09-22' },
-    { code: 'CITYCIRCLE100', used: false, user: '-', date: '-' },
-    { code: 'EARLYACCESS', used: false, user: '-', date: '-' },
+    { code: 'FOUNDER2026', used: false, user: 'Unclaimed (Active VIP)', date: '-' },
+    { code: 'SURATVIP', used: false, user: 'Unclaimed (Active VIP)', date: '-' },
+    { code: 'CITYCIRCLE100', used: false, user: 'Unclaimed (Active VIP)', date: '-' },
+    { code: 'EARLYACCESS', used: false, user: 'Unclaimed (Active VIP)', date: '-' },
   ]);
   const [newCodeInput, setNewCodeInput] = useState('');
 
