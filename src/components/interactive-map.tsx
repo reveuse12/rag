@@ -44,12 +44,13 @@ export interface MapVenue {
   lat: number;
   lng: number;
   area: string;
+  citySlug?: string;
   isUserAdded?: boolean;
   isMeetup?: boolean;
   meetupData?: any;
 }
 
-export default function InteractiveSuratMap() {
+export default function InteractiveCityMap() {
   const { currentCity } = useCity();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -57,17 +58,6 @@ export default function InteractiveSuratMap() {
   const peopleLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const tempPinLayerRef = useRef<L.LayerGroup | null>(null);
   const meetupsLayerGroupRef = useRef<L.LayerGroup | null>(null);
-
-  // Fly to active city coordinates when city changes
-  useEffect(() => {
-    if (mapInstanceRef.current && currentCity) {
-      mapInstanceRef.current.flyTo(
-        [currentCity.latitude, currentCity.longitude],
-        currentCity.zoom || 12,
-        { duration: 1.5 }
-      );
-    }
-  }, [currentCity]);
 
   // Dynamic venues state (loaded from user map interactions / localStorage)
   const [venues, setVenues] = useState<MapVenue[]>([]);
@@ -102,24 +92,46 @@ export default function InteractiveSuratMap() {
   const [hostTicketPrice, setHostTicketPrice] = useState(0);
   const [hostSuccessToast, setHostSuccessToast] = useState<string | null>(null);
 
+  // Fly to active city coordinates whenever currentCity changes
+  useEffect(() => {
+    if (mapInstanceRef.current && currentCity) {
+      mapInstanceRef.current.flyTo(
+        [currentCity.latitude, currentCity.longitude],
+        currentCity.zoom || 13,
+        { duration: 1.5 }
+      );
+      if (tempPinLayerRef.current) {
+        tempPinLayerRef.current.clearLayers();
+      }
+      setSelectedItem(null);
+    }
+  }, [currentCity?.slug, currentCity?.latitude, currentCity?.longitude, currentCity?.zoom]);
+
   // Load venues, meetups, and groups on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedVenues = localStorage.getItem('cc_user_pinned_venues');
+      const savedVenues = localStorage.getItem(`cc_user_pinned_venues_${currentCity?.slug || 'global'}`);
+      const fallbackVenues = localStorage.getItem('cc_user_pinned_venues');
       if (savedVenues) {
         try {
           setVenues(JSON.parse(savedVenues));
         } catch (e) {
           console.error(e);
         }
+      } else if (fallbackVenues) {
+        try {
+          setVenues(JSON.parse(fallbackVenues));
+        } catch (e) {
+          console.error(e);
+        }
       }
 
       // Fetch live meetups from API
-      fetch('/api/meetups')
+      fetch(`/api/meetups?city=${currentCity?.slug || 'surat'}`)
         .then((r) => r.json())
         .then((data) => {
           if (Array.isArray(data?.meetups)) {
-            const saved = localStorage.getItem('cc_surat_meetups');
+            const saved = localStorage.getItem(`cc_${currentCity?.slug || 'surat'}_meetups`);
             const localList: Meetup[] = saved ? JSON.parse(saved) : [];
             const apiIds = new Set(data.meetups.map((m: Meetup) => m.id));
             const extraLocal = localList.filter((m) => !apiIds.has(m.id));
@@ -129,7 +141,7 @@ export default function InteractiveSuratMap() {
         .catch((err) => console.error('Error fetching map meetups:', err));
 
       // Fetch live groups from API
-      fetch('/api/groups')
+      fetch(`/api/groups?city=${currentCity?.slug || 'surat'}`)
         .then((r) => r.json())
         .then((data) => {
           if (Array.isArray(data?.groups)) {
@@ -141,12 +153,13 @@ export default function InteractiveSuratMap() {
         })
         .catch((err) => console.error('Error fetching map groups:', err));
     }
-  }, []);
+  }, [currentCity?.slug]);
 
   // Save venues to localStorage when updated
   const saveVenues = (updatedVenues: MapVenue[]) => {
     setVenues(updatedVenues);
     if (typeof window !== 'undefined') {
+      localStorage.setItem(`cc_user_pinned_venues_${currentCity?.slug || 'global'}`, JSON.stringify(updatedVenues));
       localStorage.setItem('cc_user_pinned_venues', JSON.stringify(updatedVenues));
     }
   };
@@ -164,10 +177,14 @@ export default function InteractiveSuratMap() {
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    // Center on Surat
+    // Center on Current City
+    const initialLat = currentCity?.latitude || 21.1702;
+    const initialLng = currentCity?.longitude || 72.8311;
+    const initialZoom = currentCity?.zoom || 13;
+
     const map = L.map(mapContainerRef.current, {
-      center: [21.1550, 72.7800],
-      zoom: 13,
+      center: [initialLat, initialLng],
+      zoom: initialZoom,
       zoomControl: true,
       attributionControl: false,
     });
@@ -228,7 +245,7 @@ export default function InteractiveSuratMap() {
           );
           const data = await res.json();
           const placeName = data.display_name?.split(',')[0] || 'Selected Spot';
-          const roadArea = data.address?.suburb || data.address?.neighbourhood || data.address?.road || 'Surat';
+          const roadArea = data.address?.suburb || data.address?.neighbourhood || data.address?.road || currentCity?.name || 'Selected City';
 
           const pointInfo = {
             id: `temp-${Date.now()}`,
@@ -251,9 +268,9 @@ export default function InteractiveSuratMap() {
           const pointInfo = {
             id: `temp-${Date.now()}`,
             title: `Pin at ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`,
-            subtitle: 'Real Coordinates on Map',
+            subtitle: `Coordinates in ${currentCity?.name || 'City'}`,
             category: 'Custom' as GroupCategory,
-            area: 'Surat, Gujarat',
+            area: `${currentCity?.name || 'City'}, ${currentCity?.country || ''}`,
             lat,
             lng,
           };
@@ -361,24 +378,14 @@ export default function InteractiveSuratMap() {
 
       // 2. Render Live Hosted Meetups on Map (Glowing Amber/Primary Beacons)
       meetups.forEach((meetup, idx) => {
-        // Use EXACT persisted latitude and longitude
         let mLat: number = typeof meetup.latitude === 'number' && !isNaN(meetup.latitude) ? meetup.latitude : 0;
         let mLng: number = typeof meetup.longitude === 'number' && !isNaN(meetup.longitude) ? meetup.longitude : 0;
 
         if (!mLat || !mLng) {
-          if (meetup.place?.toLowerCase().includes('vesu') || meetup.place?.toLowerCase().includes('piplod')) {
-            mLat = 21.1418;
-            mLng = 72.7756;
-          } else if (meetup.place?.toLowerCase().includes('svnit') || meetup.place?.toLowerCase().includes('icchanath')) {
-            mLat = 21.1645;
-            mLng = 72.7845;
-          } else if (meetup.place?.toLowerCase().includes('dumas')) {
-            mLat = 21.0850;
-            mLng = 72.7050;
-          } else {
-            mLat = 21.1550 + (idx * 0.003);
-            mLng = 72.7800 + (idx * 0.003);
-          }
+          const cityLat = currentCity?.latitude || 21.1702;
+          const cityLng = currentCity?.longitude || 72.8311;
+          mLat = cityLat + (idx * 0.004) - 0.002;
+          mLng = cityLng + (idx * 0.004) - 0.002;
         }
 
         const cfg = CATEGORY_CONFIG[meetup.category || 'Custom'];
@@ -454,7 +461,7 @@ export default function InteractiveSuratMap() {
         meetupsGroup.addLayer(meetupMarker);
       });
     }
-  }, [venues, meetups, activeLayer]);
+  }, [venues, meetups, activeLayer, currentCity]);
 
   // Render People Layer (Live GPS Fuzzed Circles Only - No Fake Seed Data)
   useEffect(() => {
@@ -465,7 +472,6 @@ export default function InteractiveSuratMap() {
     peopleGroup.clearLayers();
 
     if ((activeLayer === 'both' || activeLayer === 'people') && peopleOptIn && userFuzzedZone) {
-      // Real GPS Fuzzed circle of the active user
       const circle = L.circle([userFuzzedZone.latitude, userFuzzedZone.longitude], {
         radius: userFuzzedZone.accuracy_meters || 400,
         color: '#0F5257',
@@ -480,7 +486,7 @@ export default function InteractiveSuratMap() {
           title: `Your Active Rough Location Zone`,
           subtitle: `Fuzzed ~${userFuzzedZone.accuracy_meters || 400}m for privacy`,
           category: 'Custom' as GroupCategory,
-          area: 'Surat (Real GPS Differential Privacy)',
+          area: `${currentCity?.name || 'City'} (Real GPS Differential Privacy)`,
           lat: userFuzzedZone.latitude,
           lng: userFuzzedZone.longitude,
         });
@@ -502,7 +508,7 @@ export default function InteractiveSuratMap() {
 
       peopleGroup.addLayer(circle);
     }
-  }, [activeLayer, peopleOptIn, userFuzzedZone]);
+  }, [activeLayer, peopleOptIn, userFuzzedZone, currentCity]);
 
   // Real Browser Geolocation Trigger
   const handleRealLocationDetection = () => {
@@ -555,9 +561,9 @@ export default function InteractiveSuratMap() {
 
     setSearching(true);
     try {
-      const q = searchQuery.toLowerCase().includes('surat')
+      const q = searchQuery.toLowerCase().includes(currentCity.name.toLowerCase())
         ? searchQuery.trim()
-        : `${searchQuery.trim()}, Surat, Gujarat`;
+        : `${searchQuery.trim()}, ${currentCity.name}, ${currentCity.country}`;
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`
       );
@@ -590,10 +596,58 @@ export default function InteractiveSuratMap() {
         });
         setNewVenueName(topResult.display_name.split(',')[0]);
       } else {
-        alert('Location not found in Surat. Try another street name or landmark.');
+        alert(`Location not found in ${currentCity.name}. Try another street name or landmark.`);
       }
     } catch (err) {
       console.error('Search error:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Jump to Landmark Hotspot dynamically
+  const handleJumpToLandmark = async (landmark: string) => {
+    setSearching(true);
+    try {
+      const q = `${landmark}, ${currentCity.name}, ${currentCity.country}`;
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`
+      );
+      const data = await res.json();
+
+      if (data && data.length > 0) {
+        const topResult = data[0];
+        const lat = parseFloat(topResult.lat);
+        const lng = parseFloat(topResult.lon);
+
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo([lat, lng], 15, { duration: 1.2 });
+        }
+
+        const pointInfo = {
+          id: `landmark-${Date.now()}`,
+          title: landmark,
+          subtitle: `${currentCity.name} Landmark`,
+          category: 'Custom' as GroupCategory,
+          area: topResult.display_name,
+          lat,
+          lng,
+        };
+
+        setSelectedItem(pointInfo);
+        setPickedCoords({
+          lat,
+          lng,
+          address: topResult.display_name,
+        });
+        setNewVenueName(landmark);
+      } else {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo([currentCity.latitude, currentCity.longitude], 14, { duration: 1 });
+        }
+      }
+    } catch (err) {
+      console.error('Landmark jump error:', err);
     } finally {
       setSearching(false);
     }
@@ -612,6 +666,7 @@ export default function InteractiveSuratMap() {
       lat: pickedCoords.lat,
       lng: pickedCoords.lng,
       area: pickedCoords.address,
+      citySlug: currentCity.slug,
       isUserAdded: true,
     };
 
@@ -620,7 +675,6 @@ export default function InteractiveSuratMap() {
     setShowAddModal(false);
     setSelectedItem(newVenue);
 
-    // Clear temp pin
     if (tempPinLayerRef.current) {
       tempPinLayerRef.current.clearLayers();
     }
@@ -633,7 +687,7 @@ export default function InteractiveSuratMap() {
 
     const group = availableGroups.find((g) => g.id === hostGroupId) || {
       id: hostGroupId || 'g-general',
-      name: 'Surat Community Circle',
+      name: `${currentCity.name} Community Circle`,
       category: 'Custom' as const,
     };
     const creatorName =
@@ -642,8 +696,8 @@ export default function InteractiveSuratMap() {
 
     const newMeetup: Meetup = {
       id: `m-map-${Date.now()}`,
-      title: hostTitle.trim() || 'Surat Community Meetup',
-      description: hostDescription.trim() || 'Gathering hosted directly from Surat Live Map.',
+      title: hostTitle.trim() || `${currentCity.name} Community Meetup`,
+      description: hostDescription.trim() || `Gathering hosted directly from ${currentCity.name} Live Map.`,
       place: selectedItem?.title && !selectedItem?.isMeetup ? `${selectedItem.title} · ${pickedCoords.address.split(',')[0]}` : pickedCoords.address,
       latitude: pickedCoords.lat,
       longitude: pickedCoords.lng,
@@ -659,14 +713,12 @@ export default function InteractiveSuratMap() {
       created_at: new Date().toISOString(),
     };
 
-    // Save to shared localStorage meetup store
     const updatedMeetups = [newMeetup, ...meetups];
     setMeetups(updatedMeetups);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('cc_surat_meetups', JSON.stringify(updatedMeetups));
+      localStorage.setItem(`cc_${currentCity.slug}_meetups`, JSON.stringify(updatedMeetups));
     }
 
-    // Set map focus
     setSelectedItem({
       id: newMeetup.id,
       title: newMeetup.title,
@@ -682,7 +734,7 @@ export default function InteractiveSuratMap() {
     setShowHostModal(false);
     setHostTitle('');
     setHostDescription('');
-    setHostSuccessToast(`🎉 Meetup "${newMeetup.title}" is now LIVE on Surat Circles & Map!`);
+    setHostSuccessToast(`🎉 Meetup "${newMeetup.title}" is now LIVE on ${currentCity.name} Circles & Map!`);
 
     setTimeout(() => {
       setHostSuccessToast(null);
@@ -697,9 +749,15 @@ export default function InteractiveSuratMap() {
   const openDirectHostModal = () => {
     if (!pickedCoords && selectedItem) {
       setPickedCoords({
-        lat: selectedItem.lat || 21.1550,
-        lng: selectedItem.lng || 72.7800,
-        address: selectedItem.area || selectedItem.title || 'Surat, Gujarat',
+        lat: selectedItem.lat || currentCity.latitude,
+        lng: selectedItem.lng || currentCity.longitude,
+        address: selectedItem.area || selectedItem.title || `${currentCity.name}, ${currentCity.country}`,
+      });
+    } else if (!pickedCoords) {
+      setPickedCoords({
+        lat: currentCity.latitude,
+        lng: currentCity.longitude,
+        address: `${currentCity.name}, ${currentCity.country}`,
       });
     }
     setShowHostModal(true);
@@ -719,19 +777,14 @@ export default function InteractiveSuratMap() {
     setUserFuzzedZone(null);
   };
 
-  const jumpToRegion = (lat: number, lng: number, zoom: number = 14) => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo([lat, lng], zoom, { duration: 1 });
-    }
-  };
-
   return (
     <div className="space-y-4">
       {/* Top Controls Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card border border-border rounded-2xl p-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold font-heading">Surat Live Map</h1>
+            <span className="text-xl">{currentCity.flag}</span>
+            <h1 className="text-xl font-bold font-heading">{currentCity.name} Live Map</h1>
             <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
               {venues.length} Pinned Places
             </span>
@@ -740,7 +793,7 @@ export default function InteractiveSuratMap() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Click anywhere on the map or any venue to <strong>directly host a meetup</strong> or pin a local spot.
+            Click anywhere on the map or any venue to <strong>directly host a meetup</strong> or pin a local spot in {currentCity.name}.
           </p>
         </div>
 
@@ -821,7 +874,7 @@ export default function InteractiveSuratMap() {
               <ShieldAlert className="w-4 h-4" /> Panic Safety Action Triggered
             </div>
             <p>
-              Your location sharing was immediately terminated and purged. Surat emergency helpline (112) is available. A moderation alert ticket has been recorded.
+              Your location sharing was immediately terminated and purged. Emergency helpline (112) is available. A moderation alert ticket has been recorded.
             </p>
           </div>
           <Button
@@ -843,7 +896,7 @@ export default function InteractiveSuratMap() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search any real Surat address or landmark (e.g. VR Mall, SVNIT, Dumas Beach)..."
+            placeholder={`Search any real ${currentCity.name} address or landmark (e.g. ${currentCity.landmarks.slice(0, 3).join(', ')})...`}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-input bg-card text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-primary shadow-2xs"
           />
         </div>
@@ -852,33 +905,22 @@ export default function InteractiveSuratMap() {
         </Button>
       </form>
 
-      {/* Surat Region Quick Jump Chips */}
+      {/* Dynamic City Landmarks / Quick Jump Chips */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-        <span className="text-muted-foreground font-semibold shrink-0">Quick jump:</span>
-        <button
-          onClick={() => jumpToRegion(21.1450, 72.7780, 14)}
-          className="px-3 py-1 rounded-xl bg-card border border-border hover:border-primary/50 text-foreground font-medium shrink-0 shadow-2xs"
-        >
-          📍 Vesu & Piplod
-        </button>
-        <button
-          onClick={() => jumpToRegion(21.1645, 72.7845, 14)}
-          className="px-3 py-1 rounded-xl bg-card border border-border hover:border-primary/50 text-foreground font-medium shrink-0 shadow-2xs"
-        >
-          🎓 SVNIT Campus
-        </button>
-        <button
-          onClick={() => jumpToRegion(21.0850, 72.7050, 13)}
-          className="px-3 py-1 rounded-xl bg-card border border-border hover:border-primary/50 text-foreground font-medium shrink-0 shadow-2xs"
-        >
-          🌊 Dumas Beach
-        </button>
-        <button
-          onClick={() => jumpToRegion(21.1702, 72.8311, 13)}
-          className="px-3 py-1 rounded-xl bg-card border border-border hover:border-primary/50 text-foreground font-medium shrink-0 shadow-2xs"
-        >
-          🏙️ Surat Central (Tapi)
-        </button>
+        <span className="text-muted-foreground font-semibold shrink-0">
+          {currentCity.name} Hotspots:
+        </span>
+        {currentCity.landmarks.map((landmark) => (
+          <button
+            key={landmark}
+            onClick={() => handleJumpToLandmark(landmark)}
+            disabled={searching}
+            className="px-3 py-1 rounded-xl bg-card border border-border hover:border-primary/50 text-foreground font-medium shrink-0 shadow-2xs transition-all flex items-center gap-1.5 hover:bg-primary/5 active:scale-95"
+          >
+            <MapPin className="w-3 h-3 text-primary" />
+            <span>{landmark}</span>
+          </button>
+        ))}
       </div>
 
       {/* Main Map Viewport */}
@@ -967,7 +1009,7 @@ export default function InteractiveSuratMap() {
                       color: selectedItem.isMeetup ? '#FF6B35' : CATEGORY_CONFIG[selectedItem.category as GroupCategory]?.color || '#0F5257',
                     }}
                   >
-                    {selectedItem.isMeetup ? '🔥 Live Meetup' : selectedItem.category || 'Surat Location'}
+                    {selectedItem.isMeetup ? '🔥 Live Meetup' : selectedItem.category || `${currentCity.name} Location`}
                   </span>
                   {selectedItem.isMeetup && (
                     <span className="text-[10px] font-bold text-success bg-success/15 px-2 py-0.5 rounded-sm">
@@ -1035,10 +1077,10 @@ export default function InteractiveSuratMap() {
 
             <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1 truncate">
-                <MapPin className="w-3.5 h-3.5 text-primary shrink-0" /> {selectedItem.area || 'Surat, Gujarat'}
+                <MapPin className="w-3.5 h-3.5 text-primary shrink-0" /> {selectedItem.area || `${currentCity.name}, ${currentCity.country}`}
               </span>
               <span className="text-foreground font-semibold shrink-0">
-                {selectedItem.lat ? `${selectedItem.lat.toFixed(4)}°, ${selectedItem.lng?.toFixed(4)}°` : 'Surat'}
+                {selectedItem.lat ? `${selectedItem.lat.toFixed(4)}°, ${selectedItem.lng?.toFixed(4)}°` : currentCity.name}
               </span>
             </div>
           </div>
@@ -1055,7 +1097,7 @@ export default function InteractiveSuratMap() {
                   <Sparkles className="w-5 h-5 text-accent" /> Host Meetup Directly from Map
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Location pinned to: <strong>{pickedCoords?.address.split(',')[0] || selectedItem?.title || 'Surat'}</strong>
+                  Location pinned to: <strong>{pickedCoords?.address.split(',')[0] || selectedItem?.title || currentCity.name}</strong>
                 </p>
               </div>
               <button onClick={() => setShowHostModal(false)} className="p-1 rounded-md text-muted-foreground hover:bg-muted">
@@ -1071,7 +1113,7 @@ export default function InteractiveSuratMap() {
                   required
                   value={hostTitle}
                   onChange={(e) => setHostTitle(e.target.value)}
-                  placeholder="e.g. Surat Sunset Tech Mixer, Dumas Morning Cycling"
+                  placeholder={`e.g. ${currentCity.name} Founders Mixer, Weekend Morning Cycling`}
                   className="w-full px-3.5 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -1090,7 +1132,7 @@ export default function InteractiveSuratMap() {
                       </option>
                     ))
                   ) : (
-                    <option value="g-general">Surat General Circle (Custom)</option>
+                    <option value="g-general">{currentCity.name} General Circle (Custom)</option>
                   )}
                 </select>
               </div>
@@ -1100,10 +1142,10 @@ export default function InteractiveSuratMap() {
                   <MapPin className="w-3.5 h-3.5" /> Pinned Map Spot
                 </div>
                 <div className="text-xs text-foreground font-semibold truncate">
-                  {selectedItem?.title || 'Selected Map Coordinates'}
+                  {selectedItem?.title || `${currentCity.name} Map Coordinates`}
                 </div>
                 <div className="text-[11px] text-muted-foreground truncate">
-                  {pickedCoords ? `${pickedCoords.address} (${pickedCoords.lat.toFixed(4)}°, ${pickedCoords.lng.toFixed(4)}°)` : 'Surat Coordinates'}
+                  {pickedCoords ? `${pickedCoords.address} (${pickedCoords.lat.toFixed(4)}°, ${pickedCoords.lng.toFixed(4)}°)` : `${currentCity.name} Coordinates`}
                 </div>
               </div>
 
@@ -1130,7 +1172,7 @@ export default function InteractiveSuratMap() {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">Entry Price (₹0 for Free)</label>
+                <label className="block font-semibold mb-1">Entry Price ({currentCity.currencySymbol}0 for Free)</label>
                 <input
                   type="number"
                   min={0}
@@ -1171,7 +1213,7 @@ export default function InteractiveSuratMap() {
         <div className="fixed inset-0 z-2000 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-card text-card-foreground border border-border rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-lg font-heading">Pin Location to Surat Circles</h3>
+              <h3 className="font-bold text-lg font-heading">Pin Location to {currentCity.name} Circles</h3>
               <button onClick={() => setShowAddModal(false)} className="p-1 rounded-md text-muted-foreground hover:bg-muted">
                 <X className="w-4 h-4" />
               </button>
@@ -1185,7 +1227,7 @@ export default function InteractiveSuratMap() {
                   required
                   value={newVenueName}
                   onChange={(e) => setNewVenueName(e.target.value)}
-                  placeholder="e.g. Nomad Coffee Co, SVNIT Circle"
+                  placeholder={`e.g. Specialty Roasters, Central Park Circle`}
                   className="w-full px-3.5 py-2 rounded-xl border border-input bg-background"
                 />
               </div>
@@ -1227,7 +1269,7 @@ export default function InteractiveSuratMap() {
               </div>
 
               <div className="p-3 bg-muted/40 rounded-xl text-[11px] text-muted-foreground">
-                <strong>Real Coordinates:</strong> {pickedCoords.lat.toFixed(4)}° N, {pickedCoords.lng.toFixed(4)}° E
+                <strong>Real Coordinates:</strong> {pickedCoords.lat.toFixed(4)}°, {pickedCoords.lng.toFixed(4)}°
                 <div className="truncate mt-0.5">{pickedCoords.address}</div>
               </div>
 
@@ -1248,7 +1290,7 @@ export default function InteractiveSuratMap() {
       <div className="p-4 bg-muted/40 border border-border rounded-2xl flex items-start gap-3 text-xs text-muted-foreground">
         <Shield className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div>
-          <strong className="text-foreground">Differential Privacy Guarantee:</strong> When enabling rough location, your real browser GPS coordinates are fuzzed by 300–500m on the server before anything is stored. Exact coordinates are never shared with other users.
+          <strong className="text-foreground">Differential Privacy Guarantee:</strong> When enabling rough location, your real browser GPS coordinates are fuzzed by 300–500m on the server before anything is stored. Exact coordinates are never shared with other users in {currentCity.name}.
         </div>
       </div>
     </div>
