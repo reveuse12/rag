@@ -169,42 +169,53 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {groups.slice(0, 4).map((group) => {
-              const cfg = CATEGORY_CONFIG[group.category];
-              const Icon = cfg.icon;
-              return (
-                <Link
-                  key={group.id}
-                  href={`/groups/${group.id}`}
-                  className="p-4 rounded-2xl bg-card border border-border hover:border-primary/40 transition-all flex flex-col justify-between group"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-foreground border border-border"
-                        style={{ borderLeftColor: cfg.color, borderLeftWidth: 3 }}
-                      >
-                        <Icon className="w-3 h-3" style={{ color: cfg.color }} />
-                        {group.category}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">{group.member_count} {group.member_count === 1 ? 'member' : 'members'}</span>
+          {groups.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {groups.slice(0, 4).map((group) => {
+                const cfg = CATEGORY_CONFIG[group.category] || CATEGORY_CONFIG.Custom;
+                const Icon = cfg.icon;
+                return (
+                  <Link
+                    key={group.id}
+                    href={`/groups/${group.id}`}
+                    className="p-4 rounded-2xl bg-card border border-border hover:border-primary/40 transition-all flex flex-col justify-between group"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-foreground border border-border"
+                          style={{ borderLeftColor: cfg.color, borderLeftWidth: 3 }}
+                        >
+                          <Icon className="w-3 h-3" style={{ color: cfg.color }} />
+                          {group.category}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">{group.member_count} {group.member_count === 1 ? 'member' : 'members'}</span>
+                      </div>
+                      <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                        {group.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{group.description}</p>
                     </div>
-                    <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                      {group.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{group.description}</p>
-                  </div>
-                  <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground">Admin: {group.admin_name}</span>
-                    <span className="text-primary font-semibold flex items-center gap-0.5">
-                      Open Chat <ArrowRight className="w-3 h-3" />
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+                    <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Admin: {group.admin_name}</span>
+                      <span className="text-primary font-semibold flex items-center gap-0.5">
+                        Open Chat <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-8 rounded-2xl border border-dashed border-border bg-card/50 text-center space-y-3">
+              <p className="text-xs text-muted-foreground">No active circles created yet.</p>
+              <Link href="/groups">
+                <Button size="sm" className="bg-primary text-primary-foreground text-xs font-semibold">
+                  Create First Circle
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Right 1 Col: Upcoming Meetup Spotlight & Sponsor */}
@@ -216,7 +227,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {meetups[0] && (
+          {meetups[0] ? (
             <div className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3">
               <div className="flex justify-between items-start gap-2">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-sm bg-accent/20 text-accent-foreground">
@@ -253,6 +264,15 @@ export default function DashboardPage() {
                   </Button>
                 </Link>
               </div>
+            </div>
+          ) : (
+            <div className="p-6 rounded-2xl border border-dashed border-border bg-card/50 text-center space-y-2">
+              <p className="text-xs text-muted-foreground">No upcoming meetups scheduled.</p>
+              <Link href="/meetups">
+                <Button size="sm" variant="outline" className="text-xs font-semibold">
+                  Host a Meetup
+                </Button>
+              </Link>
             </div>
           )}
 

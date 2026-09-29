@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
-import { Meetup, GroupCategory } from '@/types';
+import { Meetup, Group, GroupCategory } from '@/types';
 import { INITIAL_MEETUPS, INITIAL_GROUPS, CURRENT_USER } from '@/lib/data';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
 import type { SelectedLocation } from '@/components/location-picker';
@@ -51,13 +51,26 @@ export default function MeetupsPage() {
   const [place, setPlace] = useState('');
   const [venueCoordinates, setVenueCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [dateTime, setDateTime] = useState('');
-  const [groupId, setGroupId] = useState(INITIAL_GROUPS[0].id);
+  const [availableGroups, setAvailableGroups] = useState<Group[]>(INITIAL_GROUPS);
+  const [groupId, setGroupId] = useState(INITIAL_GROUPS[0]?.id || 'g-general');
   const [capacity, setCapacity] = useState(30);
   const [ticketPrice, setTicketPrice] = useState(0);
 
-  // Load custom meetups and RSVPs from localStorage on mount
+  // Load custom meetups, groups, and RSVPs from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const storedCustomGroups = localStorage.getItem('cc_custom_groups');
+      if (storedCustomGroups) {
+        try {
+          const parsedGroups = JSON.parse(storedCustomGroups);
+          if (Array.isArray(parsedGroups) && parsedGroups.length > 0) {
+            setAvailableGroups(parsedGroups);
+            setGroupId(parsedGroups[0].id);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
       const stored = localStorage.getItem('cc_surat_meetups');
       if (stored) {
         try {
@@ -136,7 +149,7 @@ export default function MeetupsPage() {
       return;
     }
 
-    const group = INITIAL_GROUPS.find((g) => g.id === groupId);
+    const group = availableGroups.find((g) => g.id === groupId);
     const creatorName =
       (typeof window !== 'undefined' && localStorage.getItem('user_display_name')) ||
       CURRENT_USER.display_name;
@@ -451,11 +464,15 @@ export default function MeetupsPage() {
                   onChange={(e) => setGroupId(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
                 >
-                  {INITIAL_GROUPS.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name} ({g.category})
-                    </option>
-                  ))}
+                  {availableGroups.length > 0 ? (
+                    availableGroups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name} ({g.category})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="g-general">General Surat Community Circle</option>
+                  )}
                 </select>
               </div>
 

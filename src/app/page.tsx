@@ -25,8 +25,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
+import { GroupCategory } from '@/types';
 import { INITIAL_GROUPS } from '@/lib/data';
-import { CATEGORY_CONFIG } from '@/lib/category-helpers';
+import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
 
 // Live simulated channels for the Hero Command Center
 const HERO_CHANNELS = [
@@ -207,8 +208,20 @@ export default function LandingPage() {
 
   const currentChannel = HERO_CHANNELS.find((c) => c.id === selectedChannelId) || HERO_CHANNELS[0];
   const currentNode = RADAR_NODES.find((n) => n.id === selectedNodeId) || RADAR_NODES[0];
-  const activeBentoGroup = INITIAL_GROUPS.find((g) => g.category === bentoCategory) || INITIAL_GROUPS[0];
-  const bentoConfig = CATEGORY_CONFIG[activeBentoGroup.category];
+  const activeBentoGroup = INITIAL_GROUPS.find((g) => g.category === bentoCategory) || {
+    id: 'preview',
+    name: `${bentoCategory} Circle Surat`,
+    description: 'Hyper-local circle connecting verified Surat members.',
+    category: bentoCategory as GroupCategory,
+    member_count: 1,
+    max_members: 256,
+    cover_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
+    rules: 'Respect community members',
+    is_public: true,
+    admin_name: 'Prayag B.',
+    created_at: new Date().toISOString(),
+  };
+  const bentoConfig = CATEGORY_CONFIG[activeBentoGroup.category as GroupCategory] || CATEGORY_CONFIG.Custom;
   const BentoIcon = bentoConfig.icon;
 
   const faqs = [
@@ -773,14 +786,14 @@ export default function LandingPage() {
 
               {/* Guild Selector Chips */}
               <div className="flex flex-wrap gap-2 mb-6">
-                {INITIAL_GROUPS.map((g) => {
-                  const cfg = CATEGORY_CONFIG[g.category];
+                {CATEGORIES.map((cat) => {
+                  const cfg = CATEGORY_CONFIG[cat];
                   const Icon = cfg.icon;
-                  const isSelected = bentoCategory === g.category;
+                  const isSelected = bentoCategory === cat;
                   return (
                     <button
-                      key={g.id}
-                      onClick={() => setBentoCategory(g.category)}
+                      key={cat}
+                      onClick={() => setBentoCategory(cat)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
                         isSelected
                           ? 'bg-primary text-primary-foreground shadow-xs scale-105'
@@ -788,7 +801,7 @@ export default function LandingPage() {
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
-                      <span>{g.category}</span>
+                      <span>{cat}</span>
                     </button>
                   );
                 })}

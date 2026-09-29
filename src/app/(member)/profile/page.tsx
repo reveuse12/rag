@@ -527,32 +527,38 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-3">
-            {INITIAL_MEETUPS.slice(0, 2).map((m) => (
-              <div key={m.id} className="p-5 rounded-2xl bg-card border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-success/15 text-success">
-                      RSVP Confirmed
-                    </span>
-                    <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground">{new Date(m.date_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            {userMeetups.length > 0 ? (
+              userMeetups.map((m) => (
+                <div key={m.id} className="p-5 rounded-2xl bg-card border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-success/15 text-success">
+                        RSVP Confirmed
+                      </span>
+                      <span className="text-xs text-muted-foreground">·</span>
+                      <span className="text-xs text-muted-foreground">{new Date(m.date_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <h4 className="font-bold text-sm text-foreground">{m.title}</h4>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span>{m.place}</span>
+                    </p>
                   </div>
-                  <h4 className="font-bold text-sm text-foreground">{m.title}</h4>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span>{m.place}</span>
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <Link href="/map">
-                    <Button size="sm" variant="outline" className="text-xs h-8">
-                      <MapPin className="w-3.5 h-3.5 mr-1" /> View on Map
-                    </Button>
-                  </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link href="/map">
+                      <Button size="sm" variant="outline" className="text-xs h-8">
+                        <MapPin className="w-3.5 h-3.5 mr-1" /> View on Map
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-8 rounded-2xl border border-dashed border-border bg-card/50">
+                <p className="text-xs text-muted-foreground">No upcoming meetup RSVPs yet.</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

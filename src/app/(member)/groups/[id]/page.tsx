@@ -79,7 +79,27 @@ export default function GroupDetailPage() {
   const router = useRouter();
   const groupId = (params?.id as string) || 'g-tech-surat';
 
-  const initialGroup = INITIAL_GROUPS.find((g) => g.id === groupId) || INITIAL_GROUPS[0];
+  const fallbackGroup: Group = {
+    id: groupId,
+    name: 'Surat Community Circle',
+    description: 'Hyper-local circle connecting verified Surat members.',
+    category: 'Custom',
+    is_public: true,
+    admin_id: CURRENT_USER.id,
+    admin_name: CURRENT_USER.display_name,
+    cover_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
+    rules: '1. Respect all members\n2. No spam or uninvited solicitations',
+    member_count: 1,
+    max_members: 256,
+    require_approval: false,
+    only_admins_message: false,
+    invite_code: `cc_${groupId}`,
+    invite_link_enabled: true,
+    verified_only: false,
+    created_at: new Date().toISOString(),
+  };
+
+  const initialGroup = INITIAL_GROUPS.find((g) => g.id === groupId) || fallbackGroup;
   const groupMeetups = INITIAL_MEETUPS.filter((m) => m.group_id === initialGroup.id);
   const sponsorBanner = INITIAL_SPONSOR_BANNERS.find(
     (b) => b.placement === 'group' && (b.target_id === initialGroup.id || !b.target_id)

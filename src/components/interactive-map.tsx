@@ -96,7 +96,7 @@ export default function InteractiveSuratMap() {
   const [showHostModal, setShowHostModal] = useState(false);
   const [hostTitle, setHostTitle] = useState('');
   const [hostDescription, setHostDescription] = useState('');
-  const [hostGroupId, setHostGroupId] = useState(INITIAL_GROUPS[0].id);
+  const [hostGroupId, setHostGroupId] = useState(INITIAL_GROUPS[0]?.id || 'g-general');
   const [hostDateTime, setHostDateTime] = useState('');
   const [hostCapacity, setHostCapacity] = useState(25);
   const [hostTicketPrice, setHostTicketPrice] = useState(0);
@@ -621,7 +621,11 @@ export default function InteractiveSuratMap() {
     e.preventDefault();
     if (!pickedCoords) return;
 
-    const group = INITIAL_GROUPS.find((g) => g.id === hostGroupId) || INITIAL_GROUPS[0];
+    const group = INITIAL_GROUPS.find((g) => g.id === hostGroupId) || {
+      id: hostGroupId || 'g-general',
+      name: 'Surat Community Circle',
+      category: 'Custom' as const,
+    };
     const creatorName =
       (typeof window !== 'undefined' && localStorage.getItem('user_display_name')) ||
       CURRENT_USER.display_name;
