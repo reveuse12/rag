@@ -18,35 +18,7 @@ export const INITIAL_GROUPS: Group[] = [];
 
 export const INITIAL_MEETUPS: Meetup[] = [];
 
-export const INITIAL_SPONSOR_BANNERS: SponsorBanner[] = [
-  {
-    id: 'sp-1',
-    sponsor_id: 'sp-caffeine',
-    sponsor_name: 'The House of Caffeine',
-    placement: 'group',
-    target_id: 'g-tech-surat',
-    title: 'Official Coworking Partner',
-    description: 'Enjoy 15% off specialty coffee & free high-speed WiFi for CityCircle verified members.',
-    image_url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80',
-    link_url: 'https://instagram.com',
-    start_date: new Date().toISOString(),
-    end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'sp-2',
-    sponsor_id: 'sp-surathub',
-    sponsor_name: 'Surat Innovation Hub',
-    placement: 'global',
-    title: 'Surat Startup Weekend 2026',
-    description: 'Pitch your idea to angel investors. Registrations now open for verified members.',
-    image_url: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&w=600&q=80',
-    link_url: 'https://suratstartup.org',
-    start_date: new Date().toISOString(),
-    end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    created_at: new Date().toISOString(),
-  },
-];
+export const INITIAL_SPONSOR_BANNERS: SponsorBanner[] = [];
 
 export const INITIAL_FUZZED_PEOPLE: LocationData[] = [];
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ShieldAlert,
@@ -16,25 +16,46 @@ import {
   ExternalLink,
   TrendingUp,
   FileCheck,
+  RefreshCw,
+  Sparkles,
+  Inbox,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { INITIAL_REPORTS, INITIAL_SPONSOR_BANNERS } from '@/lib/data';
 import { Report, SponsorBanner } from '@/types';
+
+interface FoundingCodeItem {
+  id?: string;
+  code: string;
+  is_used?: boolean;
+  used_by?: string | null;
+  used_at?: string | null;
+  created_at?: string;
+}
+
+interface AdminMetrics {
+  usersCount: number;
+  groupsCount: number;
+  meetupsCount: number;
+  reportsCount: number;
+}
 
 export default function AdminDashboardPage() {
   const [isAdminAuthorized, setIsAdminAuthorized] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<'moderation' | 'founding' | 'sponsors' | 'metrics'>('moderation');
-  const [reports, setReports] = useState<Report[]>(INITIAL_REPORTS);
-  const [banners, setBanners] = useState<SponsorBanner[]>(INITIAL_SPONSOR_BANNERS);
+  
+  const [reports, setReports] = useState<Report[]>([]);
+  const [banners, setBanners] = useState<SponsorBanner[]>([]);
+  const [foundingCodes, setFoundingCodes] = useState<FoundingCodeItem[]>([]);
+  const [metrics, setMetrics] = useState<AdminMetrics>({
+    usersCount: 0,
+    groupsCount: 0,
+    meetupsCount: 0,
+    reportsCount: 0,
+  });
 
-  // Founding Code generator state
-  const [foundingCodes, setFoundingCodes] = useState([
-    { code: 'FOUNDER2026', used: false, user: 'Unclaimed (Active VIP)', date: '-' },
-    { code: 'SURATVIP', used: false, user: 'Unclaimed (Active VIP)', date: '-' },
-    { code: 'CITYCIRCLE100', used: false, user: 'Unclaimed (Active VIP)', date: '-' },
-    { code: 'EARLYACCESS', used: false, user: 'Unclaimed (Active VIP)', date: '-' },
-  ]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const [newCodeInput, setNewCodeInput] = useState('');
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   // Sponsor Banner form
   const [showAddBannerModal, setShowAddBannerModal] = useState(false);
@@ -45,7 +66,7 @@ export default function AdminDashboardPage() {
   const [bannerLink, setBannerLink] = useState('');
 
   // Strict Admin authorization check
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase();
       const storedRole = (localStorage.getItem('user_role') || '').toLowerCase();
@@ -64,37 +85,32 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  // Hydrate admin data from storage
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedReports = localStorage.getItem('cc_user_reports');
-      if (storedReports) {
-        try {
-          setReports(JSON.parse(storedReports));
-        } catch (e) {
-          console.error(e);
-        }
+  // Fetch live admin data from API
+  const fetchAdminData = async () => {
+    setIsLoadingData(true);
+    try {
+      const res = await fetch('/api/admin/data');
+      if (res.ok) {
+        const data = await res.json();
+        setMetrics(data.metrics || { usersCount: 0, groupsCount: 0, meetupsCount: 0, reportsCount: 0 });
+        setFoundingCodes(data.foundingCodes || []);
+        setReports(data.reports || []);
+        setBanners(data.banners || []);
       }
-      const storedBanners = localStorage.getItem('cc_sponsor_banners');
-      if (storedBanners) {
-        try {
-          setBanners(JSON.parse(storedBanners));
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      const storedCodes = localStorage.getItem('cc_founding_codes');
-      if (storedCodes) {
-        try {
-          setFoundingCodes(JSON.parse(storedCodes));
-        } catch (e) {
-          console.error(e);
-        }
-      }
+    } catch (err) {
+      console.error('Failed to load admin data:', err);
+    } finally {
+      setIsLoadingData(false);
     }
-  }, []);
+  };
 
-  const handleResolveReport = (reportId: string, action: 'dismiss' | 'ban' | 'remove') => {
+  useEffect(() => {
+    if (isAdminAuthorized) {
+      fetchAdminData();
+    }
+  }, [isAdminAuthorized]);
+
+  const handleResolveReport = async (reportId: string, action: 'dismiss' | 'ban' | 'remove') => {
     const adminName = (typeof window !== 'undefined' && localStorage.getItem('user_display_name')) || 'Super Admin';
     setReports((prev) => {
       const updated = prev.map((r) =>
@@ -107,29 +123,50 @@ export default function AdminDashboardPage() {
             }
           : r
       );
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('cc_user_reports', JSON.stringify(updated));
-      }
       return updated;
     });
   };
 
-  const handleGenerateCode = (e: React.FormEvent) => {
+  const handleGenerateCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCodeInput.trim()) return;
-    setFoundingCodes([
-      {
-        code: newCodeInput.trim().toUpperCase(),
-        used: false,
-        user: '-',
-        date: '-',
-      },
-      ...foundingCodes,
-    ]);
-    setNewCodeInput('');
+    if (!newCodeInput.trim() || isGeneratingCode) return;
+
+    setIsGeneratingCode(true);
+    try {
+      const normalizedCode = newCodeInput.trim().toUpperCase();
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_founding_code',
+          code: normalizedCode,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.code) {
+        setFoundingCodes((prev) => [data.code, ...prev]);
+        setNewCodeInput('');
+      } else {
+        // Local fallback
+        setFoundingCodes((prev) => [
+          {
+            code: normalizedCode,
+            is_used: false,
+            created_at: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
+        setNewCodeInput('');
+      }
+    } catch (err) {
+      console.error('Error creating code:', err);
+    } finally {
+      setIsGeneratingCode(false);
+    }
   };
 
-  const handleCreateBanner = (e: React.FormEvent) => {
+  const handleCreateBanner = async (e: React.FormEvent) => {
     e.preventDefault();
     const newBanner: SponsorBanner = {
       id: `sp-${Date.now()}`,
@@ -144,11 +181,27 @@ export default function AdminDashboardPage() {
       end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),
     };
+
+    try {
+      await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create_banner',
+          banner: newBanner,
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
     setBanners([newBanner, ...banners]);
     setShowAddBannerModal(false);
     setSponsorName('');
     setBannerTitle('');
     setBannerDesc('');
+    setBannerImg('');
+    setBannerLink('');
   };
 
   if (isAdminAuthorized === null) {
@@ -190,13 +243,16 @@ export default function AdminDashboardPage() {
     );
   }
 
+  const pendingReportsCount = reports.filter((r) => r.status === 'pending').length;
+  const usedCodesCount = foundingCodes.filter((c) => c.is_used).length;
+
   return (
     <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card border border-border rounded-3xl p-6 shadow-xs">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="p-2 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground">
+            <Link href="/dashboard" className="p-2 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
@@ -205,16 +261,26 @@ export default function AdminDashboardPage() {
                   CityCircle Surat Admin & Moderation
                 </h1>
                 <span className="px-2 py-0.5 rounded-md bg-danger/15 text-danger font-bold text-[10px] uppercase tracking-wider">
-                  Role: Admin
+                  Super Admin
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Moderation Queue, Founding Passes, Sponsor Placements & Compliance
+                Real-time Moderation Queue, Founding Passes, Sponsor Placements & Compliance Desk
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchAdminData}
+              disabled={isLoadingData}
+              className="text-xs font-semibold"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoadingData ? 'animate-spin text-primary' : ''}`} />
+              Refresh
+            </Button>
             <Link href="/grievance">
               <Button variant="outline" size="sm" className="text-xs font-semibold">
                 <FileCheck className="w-3.5 h-3.5 mr-1" /> Grievance Desk
@@ -226,10 +292,10 @@ export default function AdminDashboardPage() {
         {/* Tab Navigation */}
         <div className="flex border-b border-border gap-2 overflow-x-auto pb-1">
           {[
-            { id: 'moderation', label: 'Moderation Queue', icon: ShieldAlert, count: reports.filter(r => r.status === 'pending').length },
-            { id: 'founding', label: 'Founding Member Passes', icon: Gift, count: '248/400' },
+            { id: 'moderation', label: 'Moderation Queue', icon: ShieldAlert, count: pendingReportsCount },
+            { id: 'founding', label: 'Founding Member Passes', icon: Gift, count: foundingCodes.length },
             { id: 'sponsors', label: 'Sponsor Banners', icon: Megaphone, count: banners.length },
-            { id: 'metrics', label: 'Growth & SLAs', icon: TrendingUp },
+            { id: 'metrics', label: 'Growth & Metrics', icon: TrendingUp },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -260,75 +326,85 @@ export default function AdminDashboardPage() {
         {/* TAB 1: Moderation Queue */}
         {activeTab === 'moderation' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-base">Community Reports Queue</h3>
-                <p className="text-xs text-muted-foreground">
-                  IT Rules 2021 compliance: Acknowledge & resolve user safety reports within 24 hours.
-                </p>
-              </div>
+            <div>
+              <h3 className="font-bold text-base">Community Reports Queue</h3>
+              <p className="text-xs text-muted-foreground">
+                IT Rules 2021 compliance: Acknowledge & resolve user safety reports within 24 hours.
+              </p>
             </div>
 
-            <div className="space-y-3">
-              {reports.map((report) => (
-                <div
-                  key={report.id}
-                  className="bg-card border border-border rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-wider ${
-                        report.status === 'pending'
-                          ? 'bg-warning/15 text-warning border border-warning/30'
-                          : 'bg-success/15 text-success border border-success/30'
-                      }`}>
-                        {report.status}
-                      </span>
-                      <span className="text-xs font-bold text-foreground">
-                        Reported by: {report.reporter_name}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground">
-                        · {new Date(report.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+            {reports.length === 0 ? (
+              <div className="bg-card border border-border rounded-3xl p-12 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-success/10 text-success flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-sm text-foreground">Zero Active Reports</h4>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  The moderation queue is clean. Community members have not submitted any pending safety or grievance reports.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="bg-card border border-border rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-wider ${
+                          report.status === 'pending'
+                            ? 'bg-warning/15 text-warning border border-warning/30'
+                            : 'bg-success/15 text-success border border-success/30'
+                        }`}>
+                          {report.status}
+                        </span>
+                        <span className="text-xs font-bold text-foreground">
+                          Reported by: {report.reporter_name}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          · {new Date(report.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-foreground font-medium bg-muted/40 p-3 rounded-xl border border-border">
+                        {report.reason}
+                      </p>
+
+                      {report.reported_user_name && (
+                        <div className="text-[11px] text-muted-foreground">
+                          Target User: <span className="font-semibold text-foreground">{report.reported_user_name}</span>
+                        </div>
+                      )}
                     </div>
 
-                    <p className="text-xs text-foreground font-medium bg-muted/40 p-3 rounded-xl border border-border">
-                      {report.reason}
-                    </p>
-
-                    {report.reported_user_name && (
-                      <div className="text-[11px] text-muted-foreground">
-                        Target User: <span className="font-semibold text-foreground">{report.reported_user_name}</span>
+                    {report.status === 'pending' ? (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleResolveReport(report.id, 'dismiss')}
+                          className="h-8 text-xs font-semibold"
+                        >
+                          Dismiss
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleResolveReport(report.id, 'remove')}
+                          className="bg-danger hover:bg-danger/90 text-white h-8 text-xs font-semibold"
+                        >
+                          Remove & Warn
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-success font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" /> Resolved by {report.reviewed_by || 'Admin'}
                       </div>
                     )}
                   </div>
-
-                  {report.status === 'pending' ? (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleResolveReport(report.id, 'dismiss')}
-                        className="h-8 text-xs font-semibold"
-                      >
-                        Dismiss
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleResolveReport(report.id, 'remove')}
-                        className="bg-danger hover:bg-danger/90 text-white h-8 text-xs font-semibold"
-                      >
-                        Remove & Warn
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-xs text-success font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" /> Resolved by {report.reviewed_by}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -339,7 +415,7 @@ export default function AdminDashboardPage() {
               <div>
                 <h3 className="font-bold text-base">Founding Member Pass Management</h3>
                 <p className="text-xs text-muted-foreground">
-                  First 300–400 verified seed signups join free. Current quota: <strong>248 used / 400 cap</strong>.
+                  Generate VIP early access invite codes for verified seed signups.
                 </p>
               </div>
 
@@ -351,48 +427,72 @@ export default function AdminDashboardPage() {
                   value={newCodeInput}
                   onChange={(e) => setNewCodeInput(e.target.value)}
                   placeholder="NEWCODE2026"
+                  disabled={isGeneratingCode}
                   className="px-3 py-1.5 rounded-xl border border-input bg-card text-xs uppercase tracking-wider font-semibold focus:outline-hidden focus:ring-2 focus:ring-primary"
                 />
-                <Button type="submit" size="sm" className="bg-primary text-primary-foreground text-xs font-semibold shrink-0">
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isGeneratingCode || !newCodeInput.trim()}
+                  className="bg-primary text-primary-foreground text-xs font-semibold shrink-0"
+                >
                   <Plus className="w-3.5 h-3.5 mr-1" /> Add Code
                 </Button>
               </form>
             </div>
 
-            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/60 text-muted-foreground border-b border-border uppercase text-[10px] font-bold tracking-wider">
-                    <tr>
-                      <th className="p-3.5">Promo Code</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5">Redeemed By</th>
-                      <th className="p-3.5">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {foundingCodes.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-muted/30">
-                        <td className="p-3.5 font-mono font-bold text-primary">{item.code}</td>
-                        <td className="p-3.5">
-                          {item.used ? (
-                            <span className="px-2 py-0.5 rounded-full bg-success/15 text-success font-bold text-[10px]">
-                              Redeemed
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent-foreground font-bold text-[10px]">
-                              Available
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3.5 text-muted-foreground">{item.user}</td>
-                        <td className="p-3.5 text-muted-foreground">{item.date}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {foundingCodes.length === 0 ? (
+              <div className="bg-card border border-border rounded-3xl p-12 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                  <Gift className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-sm text-foreground">No Founding Promo Codes Created</h4>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  Use the form above to generate your first VIP founding invite code for onboarding members.
+                </p>
               </div>
-            </div>
+            ) : (
+              <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-muted/60 text-muted-foreground border-b border-border uppercase text-[10px] font-bold tracking-wider">
+                      <tr>
+                        <th className="p-3.5">Promo Code</th>
+                        <th className="p-3.5">Status</th>
+                        <th className="p-3.5">Redeemed By</th>
+                        <th className="p-3.5">Created / Redeemed Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {foundingCodes.map((item, idx) => (
+                        <tr key={item.id || idx} className="hover:bg-muted/30">
+                          <td className="p-3.5 font-mono font-bold text-primary">{item.code}</td>
+                          <td className="p-3.5">
+                            {item.is_used ? (
+                              <span className="px-2 py-0.5 rounded-full bg-success/15 text-success font-bold text-[10px]">
+                                Redeemed
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent-foreground font-bold text-[10px]">
+                                Available
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-muted-foreground">{item.used_by || 'Unclaimed'}</td>
+                          <td className="p-3.5 text-muted-foreground">
+                            {item.used_at
+                              ? new Date(item.used_at).toLocaleDateString()
+                              : item.created_at
+                              ? new Date(item.created_at).toLocaleDateString()
+                              : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -415,25 +515,37 @@ export default function AdminDashboardPage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {banners.map((banner) => (
-                <div key={banner.id} className="bg-card border border-border rounded-2xl p-4 shadow-xs flex items-center gap-3">
-                  <img
-                    src={banner.image_url}
-                    alt={banner.sponsor_name}
-                    className="w-20 h-20 rounded-xl object-cover border border-border shrink-0"
-                  />
-                  <div className="space-y-1 flex-1">
-                    <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-accent/20 text-accent-foreground">
-                      {banner.placement} Placement
-                    </span>
-                    <h4 className="font-bold text-xs text-foreground">{banner.title}</h4>
-                    <p className="text-[11px] text-muted-foreground line-clamp-1">{banner.description}</p>
-                    <div className="text-[10px] text-primary font-semibold">Sponsor: {banner.sponsor_name}</div>
-                  </div>
+            {banners.length === 0 ? (
+              <div className="bg-card border border-border rounded-3xl p-12 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-accent/15 text-accent-foreground flex items-center justify-center mx-auto">
+                  <Megaphone className="w-6 h-6" />
                 </div>
-              ))}
-            </div>
+                <h4 className="font-bold text-sm text-foreground">No Sponsor Banners Active</h4>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  Create sponsored banner placements for local Surat businesses, cafes, and event partners.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {banners.map((banner) => (
+                  <div key={banner.id} className="bg-card border border-border rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                    <img
+                      src={banner.image_url}
+                      alt={banner.sponsor_name}
+                      className="w-20 h-20 rounded-xl object-cover border border-border shrink-0"
+                    />
+                    <div className="space-y-1 flex-1">
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-accent/20 text-accent-foreground">
+                        {banner.placement} Placement
+                      </span>
+                      <h4 className="font-bold text-xs text-foreground">{banner.title}</h4>
+                      <p className="text-[11px] text-muted-foreground line-clamp-1">{banner.description}</p>
+                      <div className="text-[10px] text-primary font-semibold">Sponsor: {banner.sponsor_name}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -441,24 +553,24 @@ export default function AdminDashboardPage() {
         {activeTab === 'metrics' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-              <div className="text-xs text-muted-foreground">Verified Members</div>
-              <div className="text-2xl font-black font-heading text-primary">1</div>
-              <div className="text-[11px] text-success font-semibold">Super Admin Active</div>
+              <div className="text-xs text-muted-foreground">Total Verified Members</div>
+              <div className="text-2xl font-black font-heading text-primary">{metrics.usersCount}</div>
+              <div className="text-[11px] text-success font-semibold">Live from Supabase Users</div>
+            </div>
+            <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
+              <div className="text-xs text-muted-foreground">Active Groups / Circles</div>
+              <div className="text-2xl font-black font-heading text-foreground">{metrics.groupsCount}</div>
+              <div className="text-[11px] text-muted-foreground">Live from Supabase Groups</div>
             </div>
             <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
               <div className="text-xs text-muted-foreground">Active Meetups</div>
-              <div className="text-2xl font-black font-heading text-accent">0</div>
-              <div className="text-[11px] text-muted-foreground">Dynamic RSVP tracking</div>
+              <div className="text-2xl font-black font-heading text-accent">{metrics.meetupsCount}</div>
+              <div className="text-[11px] text-muted-foreground">Live from Supabase Meetups</div>
             </div>
             <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-              <div className="text-xs text-muted-foreground">Avg Report Resolution SLA</div>
+              <div className="text-xs text-muted-foreground">Report Resolution SLA</div>
               <div className="text-2xl font-black font-heading text-success">100%</div>
               <div className="text-[11px] text-muted-foreground">Target: &lt; 24 hrs (IT Rules 2021)</div>
-            </div>
-            <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-              <div className="text-xs text-muted-foreground">Sponsor Partnerships</div>
-              <div className="text-2xl font-black font-heading text-foreground">{banners.length} Brands</div>
-              <div className="text-[11px] text-muted-foreground">Curated local venues</div>
             </div>
           </div>
         )}
@@ -502,6 +614,26 @@ export default function AdminDashboardPage() {
                   value={bannerDesc}
                   onChange={(e) => setBannerDesc(e.target.value)}
                   placeholder="e.g. Show verified badge on phone at billing"
+                  className="w-full px-3 py-2 rounded-xl border border-input bg-background"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Banner Image URL</label>
+                <input
+                  type="url"
+                  value={bannerImg}
+                  onChange={(e) => setBannerImg(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full px-3 py-2 rounded-xl border border-input bg-background"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Target Link URL</label>
+                <input
+                  type="url"
+                  value={bannerLink}
+                  onChange={(e) => setBannerLink(e.target.value)}
+                  placeholder="https://instagram.com/..."
                   className="w-full px-3 py-2 rounded-xl border border-input bg-background"
                 />
               </div>
