@@ -40,8 +40,8 @@ const TREND_CATEGORIES: { label: string; value: string; emoji: string }[] = [
 
 export default function TrendsPage() {
   const { currentCity } = useCity();
-  const [trends, setTrends] = useState<SocialTrend[]>(INITIAL_SURAT_TRENDS);
-  const [loading, setLoading] = useState(false);
+  const [trends, setTrends] = useState<SocialTrend[]>([]);
+  const [loading, setLoading] = useState(true);
   const [lastSynced, setLastSynced] = useState<string>('Just now');
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'instagram' | 'reddit' | 'bookmarked'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');

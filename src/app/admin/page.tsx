@@ -43,9 +43,39 @@ export default function AdminDashboardPage() {
   const [bannerImg, setBannerImg] = useState('');
   const [bannerLink, setBannerLink] = useState('');
 
+  // Hydrate admin data from storage
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedReports = localStorage.getItem('cc_user_reports');
+      if (storedReports) {
+        try {
+          setReports(JSON.parse(storedReports));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const storedBanners = localStorage.getItem('cc_sponsor_banners');
+      if (storedBanners) {
+        try {
+          setBanners(JSON.parse(storedBanners));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const storedCodes = localStorage.getItem('cc_founding_codes');
+      if (storedCodes) {
+        try {
+          setFoundingCodes(JSON.parse(storedCodes));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
   const handleResolveReport = (reportId: string, action: 'dismiss' | 'ban' | 'remove') => {
-    setReports((prev) =>
-      prev.map((r) =>
+    setReports((prev) => {
+      const updated = prev.map((r) =>
         r.id === reportId
           ? {
               ...r,
@@ -54,8 +84,12 @@ export default function AdminDashboardPage() {
               reviewed_by: CURRENT_USER.display_name,
             }
           : r
-      )
-    );
+      );
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cc_user_reports', JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const handleGenerateCode = (e: React.FormEvent) => {

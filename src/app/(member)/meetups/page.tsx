@@ -71,6 +71,43 @@ export default function MeetupsPage() {
           console.error(e);
         }
       }
+      // Fetch live meetups from API
+      const fetchLiveMeetups = async () => {
+        try {
+          const res = await fetch('/api/meetups');
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data?.meetups)) {
+              const stored = localStorage.getItem('cc_surat_meetups');
+              const localList: Meetup[] = stored ? JSON.parse(stored) : [];
+              const apiIds = new Set(data.meetups.map((m: Meetup) => m.id));
+              const extraLocal = localList.filter((m) => !apiIds.has(m.id));
+              setMeetups([...data.meetups, ...extraLocal]);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching meetups:', err);
+        }
+      };
+      fetchLiveMeetups();
+
+      // Fetch live groups for selector
+      const fetchLiveGroups = async () => {
+        try {
+          const res = await fetch('/api/groups');
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data?.groups) && data.groups.length > 0) {
+              setAvailableGroups(data.groups);
+              setGroupId(data.groups[0].id);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching groups for meetups:', err);
+        }
+      };
+      fetchLiveGroups();
+
       const stored = localStorage.getItem('cc_surat_meetups');
       if (stored) {
         try {
@@ -177,6 +214,13 @@ export default function MeetupsPage() {
     saveMeetups(updated);
     setRsvpStates((prev) => ({ ...prev, [newMeetup.id]: 'going' }));
     setShowCreateModal(false);
+
+    // Persist to Supabase in background
+    fetch('/api/meetups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newMeetup),
+    }).catch((err) => console.error('Error saving meetup to DB:', err));
 
     // Reset
     setTitle('');

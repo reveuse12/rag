@@ -33,6 +33,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Group, Meetup } from '@/types';
 import { CURRENT_USER, INITIAL_GROUPS, INITIAL_MEETUPS } from '@/lib/data';
 
 const AVAILABLE_TAGS = [
@@ -91,10 +92,12 @@ export default function ProfilePage() {
   const [meetupReminders, setMeetupReminders] = useState(true);
 
   // Joined Groups & RSVPs from localStorage
-  const [joinedGroupIds, setJoinedGroupIds] = useState<string[]>(['g-tech-surat', 'g-trekkers', 'g-foodies']);
+  const [joinedGroupIds, setJoinedGroupIds] = useState<string[]>([]);
   const [rsvpdMeetupIds, setRsvpdMeetupIds] = useState<string[]>([]);
+  const [allGroups, setAllGroups] = useState<Group[]>([]);
+  const [allMeetups, setAllMeetups] = useState<Meetup[]>([]);
 
-  // Hydrate User Profile from localStorage
+  // Hydrate User Profile and dynamic groups from localStorage & API
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedName = localStorage.getItem('user_display_name');
@@ -105,6 +108,50 @@ export default function ProfilePage() {
       const storedTags = localStorage.getItem('user_interest_tags');
       const storedJoined = localStorage.getItem('cc_joined_groups');
       const storedRsvps = localStorage.getItem('cc_user_rsvps');
+
+      if (storedJoined) {
+        try {
+          setJoinedGroupIds(JSON.parse(storedJoined));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      if (storedRsvps) {
+        try {
+          setRsvpdMeetupIds(JSON.parse(storedRsvps));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Fetch live groups
+      fetch('/api/groups')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.groups)) {
+            const storedCustom = localStorage.getItem('cc_custom_groups');
+            const customList: Group[] = storedCustom ? JSON.parse(storedCustom) : [];
+            const apiIds = new Set(data.groups.map((g: Group) => g.id));
+            const extraLocal = customList.filter((g) => !apiIds.has(g.id));
+            setAllGroups([...data.groups, ...extraLocal]);
+          }
+        })
+        .catch((err) => console.error('Error fetching profile groups:', err));
+
+      // Fetch live meetups
+      fetch('/api/meetups')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.meetups)) {
+            const storedMeetups = localStorage.getItem('cc_surat_meetups');
+            const localList: Meetup[] = storedMeetups ? JSON.parse(storedMeetups) : [];
+            const apiIds = new Set(data.meetups.map((m: Meetup) => m.id));
+            const extraLocal = localList.filter((m) => !apiIds.has(m.id));
+            setAllMeetups([...data.meetups, ...extraLocal]);
+          }
+        })
+        .catch((err) => console.error('Error fetching profile meetups:', err));
 
       if (storedName || storedAvatar || storedBio || storedTags) {
         setUser((prev) => ({
@@ -260,8 +307,8 @@ export default function ProfilePage() {
     router.push('/');
   };
 
-  const joinedGroups = INITIAL_GROUPS.filter((g) => joinedGroupIds.includes(g.id));
-  const userMeetups = INITIAL_MEETUPS.filter((m) => rsvpdMeetupIds.includes(m.id) || m.created_by === user.id);
+  const joinedGroups = allGroups.filter((g) => joinedGroupIds.includes(g.id));
+  const userMeetups = allMeetups.filter((m) => rsvpdMeetupIds.includes(m.id) || m.created_by === user.id);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">

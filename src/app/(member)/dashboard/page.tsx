@@ -18,6 +18,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Group, Meetup } from '@/types';
 import { INITIAL_GROUPS, INITIAL_MEETUPS, INITIAL_SPONSOR_BANNERS, INITIAL_SURAT_TRENDS, CURRENT_USER } from '@/lib/data';
 import { CATEGORY_CONFIG } from '@/lib/category-helpers';
 
@@ -32,33 +33,33 @@ export default function DashboardPage() {
       const stored = localStorage.getItem('user_display_name');
       if (stored) setUserName(stored);
 
-      const storedMeetups = localStorage.getItem('cc_surat_meetups');
-      if (storedMeetups) {
-        try {
-          const parsed = JSON.parse(storedMeetups);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setMeetups(parsed);
+      // Fetch live groups
+      fetch('/api/groups')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.groups)) {
+            const storedCustom = localStorage.getItem('cc_custom_groups');
+            const customList: Group[] = storedCustom ? JSON.parse(storedCustom) : [];
+            const apiIds = new Set(data.groups.map((g: Group) => g.id));
+            const extraLocal = customList.filter((g) => !apiIds.has(g.id));
+            setGroups([...data.groups, ...extraLocal]);
           }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      // Sync custom member counts
-      setGroups((prev) =>
-        prev.map((g) => {
-          const customMembers = localStorage.getItem(`cc_group_members_${g.id}`);
-          if (customMembers) {
-            try {
-              const parsedMembers = JSON.parse(customMembers);
-              return { ...g, member_count: Math.max(1, parsedMembers.length) };
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          return g;
         })
-      );
+        .catch((err) => console.error('Error fetching dashboard groups:', err));
+
+      // Fetch live meetups
+      fetch('/api/meetups')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.meetups)) {
+            const storedMeetups = localStorage.getItem('cc_surat_meetups');
+            const localList: Meetup[] = storedMeetups ? JSON.parse(storedMeetups) : [];
+            const apiIds = new Set(data.meetups.map((m: Meetup) => m.id));
+            const extraLocal = localList.filter((m) => !apiIds.has(m.id));
+            setMeetups([...data.meetups, ...extraLocal]);
+          }
+        })
+        .catch((err) => console.error('Error fetching dashboard meetups:', err));
     }
   }, []);
 

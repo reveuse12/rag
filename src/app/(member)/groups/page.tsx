@@ -70,20 +70,25 @@ export default function GroupsPage() {
         }
       }
 
-      // Merge any custom stored groups
-      const storedCustomGroups = localStorage.getItem('cc_custom_groups');
-      if (storedCustomGroups) {
+      // Fetch live groups from API
+      const fetchLiveGroups = async () => {
         try {
-          const parsed: Group[] = JSON.parse(storedCustomGroups);
-          setGroups((prev) => {
-            const existingIds = new Set(prev.map((g) => g.id));
-            const newOnes = parsed.filter((g) => !existingIds.has(g.id));
-            return [...newOnes, ...prev];
-          });
-        } catch (e) {
-          console.error(e);
+          const res = await fetch('/api/groups');
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data?.groups)) {
+              const storedCustom = localStorage.getItem('cc_custom_groups');
+              const customList: Group[] = storedCustom ? JSON.parse(storedCustom) : [];
+              const apiIds = new Set(data.groups.map((g: Group) => g.id));
+              const extraLocal = customList.filter((g) => !apiIds.has(g.id));
+              setGroups([...data.groups, ...extraLocal]);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching groups:', err);
         }
-      }
+      };
+      fetchLiveGroups();
     }
   }, []);
 

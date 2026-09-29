@@ -114,22 +114,19 @@ export default function InteractiveSuratMap() {
         }
       }
 
-      const savedMeetups = localStorage.getItem('cc_surat_meetups');
-      if (savedMeetups) {
-        try {
-          const parsed = JSON.parse(savedMeetups);
-          if (Array.isArray(parsed)) {
-            setMeetups(parsed);
-          } else {
-            setMeetups([]);
+      // Fetch live meetups from API
+      fetch('/api/meetups')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.meetups)) {
+            const saved = localStorage.getItem('cc_surat_meetups');
+            const localList: Meetup[] = saved ? JSON.parse(saved) : [];
+            const apiIds = new Set(data.meetups.map((m: Meetup) => m.id));
+            const extraLocal = localList.filter((m) => !apiIds.has(m.id));
+            setMeetups([...data.meetups, ...extraLocal]);
           }
-        } catch (e) {
-          console.error(e);
-          setMeetups([]);
-        }
-      } else {
-        setMeetups([]);
-      }
+        })
+        .catch((err) => console.error('Error fetching map meetups:', err));
     }
   }, []);
 
