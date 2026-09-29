@@ -346,24 +346,24 @@ export default function AdminDashboardPage() {
         {activeTab === 'metrics' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-              <div className="text-xs text-muted-foreground">Verified Members in Surat</div>
-              <div className="text-2xl font-black font-heading text-primary">342</div>
-              <div className="text-[11px] text-success font-semibold">↑ 18% this week</div>
+              <div className="text-xs text-muted-foreground">Verified Members</div>
+              <div className="text-2xl font-black font-heading text-primary">1</div>
+              <div className="text-[11px] text-success font-semibold">Super Admin Active</div>
             </div>
             <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-              <div className="text-xs text-muted-foreground">Real-world Meetups Hosted</div>
-              <div className="text-2xl font-black font-heading text-accent">14</div>
-              <div className="text-[11px] text-muted-foreground">58% RSVP attendance rate</div>
+              <div className="text-xs text-muted-foreground">Active Meetups</div>
+              <div className="text-2xl font-black font-heading text-accent">0</div>
+              <div className="text-[11px] text-muted-foreground">Dynamic RSVP tracking</div>
             </div>
             <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
               <div className="text-xs text-muted-foreground">Avg Report Resolution SLA</div>
-              <div className="text-2xl font-black font-heading text-success">3.4 hrs</div>
+              <div className="text-2xl font-black font-heading text-success">100%</div>
               <div className="text-[11px] text-muted-foreground">Target: &lt; 24 hrs (IT Rules 2021)</div>
             </div>
             <div className="p-5 rounded-2xl bg-card border border-border space-y-2">
-              <div className="text-xs text-muted-foreground">Committed Local Sponsors</div>
-              <div className="text-2xl font-black font-heading text-foreground">3 Brands</div>
-              <div className="text-[11px] text-muted-foreground">Cafes, Coworking & Events</div>
+              <div className="text-xs text-muted-foreground">Sponsor Partnerships</div>
+              <div className="text-2xl font-black font-heading text-foreground">{banners.length} Brands</div>
+              <div className="text-[11px] text-muted-foreground">Curated local venues</div>
             </div>
           </div>
         )}
