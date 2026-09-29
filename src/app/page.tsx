@@ -36,6 +36,8 @@ import {
   ExternalLink,
   Shield,
   Building,
+  Menu,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
@@ -256,6 +258,9 @@ const RADAR_NODES = [
 ];
 
 export default function LandingPage() {
+  // Mobile Menu State
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Hero Interactive States
   const [heroView, setHeroView] = useState<'feed' | 'map' | 'trends'>('feed');
   const [activeChannelId, setActiveChannelId] = useState<string>('tech');
@@ -368,17 +373,17 @@ export default function LandingPage() {
       </div>
 
       {/* FLOATING PILL NAVBAR */}
-      <header className="sticky top-0 z-50 px-4 sm:px-6 pt-4 pb-2 animate-reveal-down">
-        <nav className="max-w-5xl mx-auto h-16 rounded-full app-glass-card px-5 sm:px-7 flex items-center justify-between shadow-sm transition-all">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-sm shadow-primary/20 group-hover:scale-105 transition-transform">
+      <header className="sticky top-0 z-50 px-3 sm:px-6 pt-3 sm:pt-4 pb-2 animate-reveal-down">
+        <nav className="max-w-5xl mx-auto h-14 sm:h-16 rounded-full app-glass-card px-4 sm:px-7 flex items-center justify-between shadow-sm transition-all relative">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-base sm:text-lg shadow-sm shadow-primary/20 group-hover:scale-105 transition-transform">
               C
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-black text-xl tracking-tight text-foreground font-heading">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="font-black text-lg sm:text-xl tracking-tight text-foreground font-heading">
                 CityCircle
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-accent/20 text-accent-foreground rounded-full border border-accent/30 flex items-center gap-1.5">
+              <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-accent/20 text-accent-foreground rounded-full border border-accent/30 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                 Surat
               </span>
@@ -386,7 +391,7 @@ export default function LandingPage() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-muted-foreground">
+          <div className="hidden lg:flex items-center gap-5 xl:gap-6 text-xs font-semibold text-muted-foreground">
             <a href="#hero-viewport" className="hover:text-foreground transition-colors">
               Platform
             </a>
@@ -408,20 +413,107 @@ export default function LandingPage() {
             </a>
           </div>
 
-          {/* Action CTAs */}
-          <div className="flex items-center gap-2.5">
+          {/* Desktop Action CTAs */}
+          <div className="hidden sm:flex items-center gap-2">
             <Link href="/auth/login">
-              <Button variant="ghost" size="sm" className="text-xs font-semibold text-muted-foreground hover:text-foreground h-9 px-3 rounded-full">
+              <Button variant="ghost" size="sm" className="text-xs font-semibold text-muted-foreground hover:text-foreground h-8 sm:h-9 px-3 rounded-full">
                 Sign In
               </Button>
             </Link>
             <Link href="/auth/signup">
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-9 px-4 rounded-full shadow-sm shadow-primary/20 hover:scale-[1.02] transition-transform">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-8 sm:h-9 px-3.5 sm:px-4 rounded-full shadow-sm shadow-primary/20 hover:scale-[1.02] transition-transform">
                 Join Surat Cohort
               </Button>
             </Link>
           </div>
+
+          {/* Mobile Menu & Quick Join Controls */}
+          <div className="flex sm:hidden items-center gap-1.5">
+            <Link href="/auth/signup">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold h-8 px-3 rounded-full shadow-xs">
+                Join
+              </Button>
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="w-8 h-8 rounded-full bg-muted/80 flex items-center justify-center text-foreground hover:bg-muted transition-colors border border-border"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
         </nav>
+
+        {/* Mobile Dropdown Drawer */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden max-w-5xl mx-auto mt-2 p-4 rounded-3xl app-glass-card shadow-2xl border border-border/80 animate-in slide-in-from-top-3 fade-in duration-200">
+            <div className="flex flex-col space-y-3 text-sm font-semibold text-foreground pb-3 border-b border-border/60">
+              <a
+                href="#hero-viewport"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-muted/80 transition-colors flex items-center justify-between"
+              >
+                <span>Platform Demo</span>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </a>
+              <a
+                href="#circles"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-muted/80 transition-colors flex items-center justify-between"
+              >
+                <span>Community Circles</span>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </a>
+              <a
+                href="#how-it-works"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-muted/80 transition-colors flex items-center justify-between"
+              >
+                <span>How It Works</span>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </a>
+              <a
+                href="#privacy-vault"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-muted/80 transition-colors flex items-center justify-between"
+              >
+                <span>Privacy & Spatial Fuzzing</span>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </a>
+              <a
+                href="#founding-pass"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-accent/15 transition-colors flex items-center justify-between text-accent font-bold"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" /> Founding VIP Pass
+                </span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+              <a
+                href="#faq"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-xl hover:bg-muted/80 transition-colors flex items-center justify-between"
+              >
+                <span>Frequently Asked Questions</span>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+              </a>
+            </div>
+
+            <div className="pt-3 grid grid-cols-2 gap-2">
+              <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)} className="w-full">
+                <Button variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-2xl border-border">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)} className="w-full">
+                <Button size="sm" className="w-full h-10 text-xs font-bold rounded-2xl bg-primary text-primary-foreground shadow-xs">
+                  Join Surat Cohort
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* HERO SECTION */}
@@ -1330,9 +1422,6 @@ export default function LandingPage() {
             >
               llms.txt
             </a>
-            <Link href="/admin" className="hover:text-primary transition-colors">
-              Admin Portal
-            </Link>
           </div>
         </div>
       </footer>
