@@ -22,125 +22,192 @@ import {
   Eye,
   EyeOff,
   Volume2,
+  Users,
+  Star,
+  ThumbsUp,
+  TrendingUp,
+  Bookmark,
+  Zap,
+  Coffee,
+  Compass,
+  GraduationCap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
-import { GroupCategory } from '@/types';
-import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
+import { Group, GroupCategory } from '@/types';
+import { CATEGORY_CONFIG, CATEGORIES } from '@/lib/category-helpers';
 
-// Live simulated channels for the Hero Command Center
-const HERO_CHANNELS = [
+// Curated Mock Groups
+const LANDING_GROUPS: Group[] = [
+  {
+    id: 'g-tech-surat',
+    name: 'Surat Tech & Startup Circle',
+    description: 'Connect with founders, engineers, and creators in Surat. We host monthly tech mixers, demo days, and peer learning sessions across Vesu & Piplod.',
+    category: 'Custom',
+    is_public: true,
+    admin_id: 'a0001',
+    admin_name: 'Prayag B.',
+    cover_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
+    member_count: 142,
+    max_members: 256,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'g-trekkers',
+    name: 'Weekend Trekkers & Explorers',
+    description: 'Discover scenic trails, weekend getaways, waterfalls, and outdoor sunrise rides around Surat, Dumas, and Dang forests.',
+    category: 'Tourism',
+    is_public: true,
+    admin_id: 'a0002',
+    admin_name: 'Aarav M.',
+    cover_url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+    member_count: 98,
+    max_members: 150,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'g-foodies',
+    name: 'Surat Foodies & Cafes Club',
+    description: 'Exploring the legendary street food and aesthetic specialty coffee cafes in Surat, from Dumas Road to Vesu and Ghod Dod.',
+    category: 'Party',
+    is_public: true,
+    admin_id: 'a0003',
+    admin_name: 'Diya P.',
+    cover_url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+    member_count: 215,
+    max_members: 256,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'g-svnit',
+    name: 'SVNIT & University Alumni Network',
+    description: 'Students and alumni from SVNIT and Surat universities networking, mentoring, building side projects, and sharing career referrals.',
+    category: 'University',
+    is_public: true,
+    admin_id: 'a0004',
+    admin_name: 'Rohan K.',
+    cover_url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80',
+    member_count: 176,
+    max_members: 500,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'g-property',
+    name: 'Surat Commercial & Living Spaces',
+    description: 'Trusted peer discussions on flatmate matching, co-working spaces, rental flats in Vesu/Pal, and verified commercial property reviews.',
+    category: 'Property',
+    is_public: false,
+    admin_id: 'a0005',
+    admin_name: 'Kavya T.',
+    cover_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+    member_count: 84,
+    max_members: 200,
+    created_at: new Date().toISOString(),
+  },
+];
+
+// Curated Mock Meetups
+const LANDING_MEETUPS = [
+  {
+    id: 'm1',
+    group_name: 'Surat Tech & Startup Circle',
+    title: 'Surat AI Builders & Founders Mixer #04',
+    description: 'Casual networking, local AI startup demos, and lightning talks with Surat founders & engineers.',
+    place: 'The Roastery Cafe, VIP Road, Vesu',
+    ticket_price: 0,
+    rsvps_count: 18,
+    capacity: 24,
+    date_time: 'Sat, Oct 18 · 5:30 PM',
+  },
+  {
+    id: 'm2',
+    group_name: 'Weekend Trekkers & Explorers',
+    title: 'Sunrise Dumas Cycling Circuit (22 KM)',
+    description: 'Morning ride from VR Mall junction to Dumas beach promenade with breakfast at local stalls.',
+    place: 'VR Mall Junction, Dumas Road',
+    ticket_price: 0,
+    rsvps_count: 14,
+    capacity: 20,
+    date_time: 'Sun, Oct 19 · 5:45 AM',
+  },
+];
+
+// Channels for the Live Hero App Viewport
+const HERO_FEED_DATA = [
   {
     id: 'tech',
-    tag: '#tech-founders-surat',
+    tag: '#surat-tech-founders',
     name: 'Surat Tech & Startup Circle',
     category: 'Startups & AI',
     activeCount: 48,
-    audioLive: true,
-    audioTitle: 'Surat Dev Mixer & Demo Day Prep',
-    audioSpeakers: ['Prayag B. (Founder)', 'Kavya T.', 'Meet S.'],
-    messages: [
+    upcomingEvent: 'AI Builders Mixer · Sat, Oct 18 @ Vesu',
+    audioRoom: { active: true, title: 'Surat Demo Day Pitch Practice', listeners: 18 },
+    posts: [
       {
         id: 1,
-        user: 'Prayag Bagtharia',
-        handle: '@prayag',
-        badge: 'Admin · Founder',
+        author: 'Prayag Bagtharia',
+        role: 'Circle Host · Founder',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        text: 'Surat AI Builders Demo Day locked in for Saturday at Vesu cafe! 🚀 24 seats left.',
-        time: '2m ago',
-        reactions: { '🔥': 14, '🚀': 9, '⚡': 6 },
+        content: 'Surat AI Builders Demo Day locked in for Saturday at Vesu. 24 seats reserved, 6 spots remaining for founders.',
+        timestamp: '2m ago',
+        metrics: { upvotes: 24, bookmarks: 11 },
       },
       {
         id: 2,
-        user: 'Kavya Trivedi',
-        handle: '@kavya_t',
-        badge: 'YC W25 Applicant',
+        author: 'Kavya Trivedi',
+        role: 'Founder · YC Applicant',
         avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80',
-        text: 'Demoing our local logistics edge engine. Bringing live hardware models!',
-        time: '1m ago',
-        reactions: { '🙌': 11, '💯': 8 },
-      },
-      {
-        id: 3,
-        user: 'Dr. Meet Shah',
-        handle: '@meet_svnit',
-        badge: 'SVNIT Research',
-        avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=120&q=80',
-        text: 'Just reserved 3 developer passes for our Piplod AI lab team.',
-        time: 'Just now',
-        reactions: { '❤️': 7 },
+        content: 'Demoing our edge logistics engine. Excited to connect with local Surat angels and engineering leads.',
+        timestamp: '5m ago',
+        metrics: { upvotes: 18, bookmarks: 7 },
       },
     ],
   },
   {
     id: 'treks',
     tag: '#weekend-trekkers',
-    name: 'Weekend Trekkers & Explorers',
+    name: 'Weekend Trekkers & Cycling',
     category: 'Outdoors & Trails',
     activeCount: 36,
-    audioLive: false,
-    audioTitle: 'Sunrise Dumas Cycling Route Briefing',
-    audioSpeakers: ['Aarav M. (Guide)'],
-    messages: [
+    upcomingEvent: 'Sunrise Dumas Cycling Circuit · Sun, 5:45 AM',
+    audioRoom: { active: false, title: 'Trail Route Briefing', listeners: 0 },
+    posts: [
       {
         id: 1,
-        user: 'Aarav Mehta',
-        handle: '@aarav_treks',
-        badge: 'Trail Guide',
+        author: 'Aarav Mehta',
+        role: 'Lead Guide',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
-        text: 'Sunrise Dumas cycling circuit tomorrow at 5:45 AM. Helmets & hydration mandatory! 🚴‍♂️🌅',
-        time: '6m ago',
-        reactions: { '🌅': 19, '🚴': 14 },
-      },
-      {
-        id: 2,
-        user: 'Tanvi Raval',
-        handle: '@tanvi_r',
-        badge: 'Member',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
-        text: 'Meeting at VR Mall junction. Bringing 3 riders from Adajan side!',
-        time: '3m ago',
-        reactions: { '✨': 8 },
+        content: 'Sunrise Dumas cycling circuit tomorrow at 5:45 AM. Helmets mandatory, meeting point at VR Mall junction.',
+        timestamp: '8m ago',
+        metrics: { upvotes: 32, bookmarks: 14 },
       },
     ],
   },
   {
     id: 'foodies',
     tag: '#surat-foodies-club',
-    name: 'Surat Foodies & Coffee Roasters',
+    name: 'Surat Specialty Coffee & Foodies',
     category: 'Cafes & Dining',
-    activeCount: 62,
-    audioLive: true,
-    audioTitle: 'Hidden Specialty Cafes in Piplod & Vesu',
-    audioSpeakers: ['Diya P. (Lead)', 'Rohan K.'],
-    messages: [
+    activeCount: 64,
+    upcomingEvent: 'Artisanal Pour-Over Tasting · Sun, 10:00 AM @ Piplod',
+    audioRoom: { active: true, title: 'Best Specialty Cafes in Vesu', listeners: 22 },
+    posts: [
       {
         id: 1,
-        user: 'Diya Patel',
-        handle: '@diya_eats',
-        badge: 'Curator',
+        author: 'Diya Patel',
+        role: 'Food Curator',
         avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&q=80',
-        text: 'Discovered a micro-roastery tucked away near VIP Road with single-origin pour-overs ☕',
-        time: '8m ago',
-        reactions: { '☕': 24, '😋': 18 },
-      },
-      {
-        id: 2,
-        user: 'Rohan Kotak',
-        handle: '@rohan_k',
-        badge: 'Member',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
-        text: 'Adding it to the official Sunday breakfast meetup RSVP list!',
-        time: '2m ago',
-        reactions: { '💯': 12 },
+        content: 'Discovered a hidden micro-roastery near VIP Road with single-origin pour-overs. Added to Sunday meetup itinerary.',
+        timestamp: '12m ago',
+        metrics: { upvotes: 41, bookmarks: 19 },
       },
     ],
   },
 ];
 
-// Surat Geographic Hotspots for Radar
+// Surat Geographic Hotspots for Radar Matrix
 const RADAR_NODES = [
-  { id: 'vesu', name: 'Vesu Tech Hub', coords: '21.144° N, 72.771° E', x: 68, y: 64, active: 38, note: 'AI Mixers & Coworking', trend: '+14% this wk' },
+  { id: 'vesu', name: 'Vesu Innovation Hub', coords: '21.144° N, 72.771° E', x: 68, y: 64, active: 38, note: 'AI Mixers & Coworking', trend: '+14% this wk' },
   { id: 'piplod', name: 'Piplod Cultural Strip', coords: '21.168° N, 72.788° E', x: 44, y: 46, active: 24, note: 'Specialty Coffee & Mixers', trend: 'High density' },
   { id: 'svnit', name: 'SVNIT University Node', coords: '21.163° N, 72.784° E', x: 54, y: 34, active: 46, note: 'Alumni & Tech Labs', trend: 'Verified only' },
   { id: 'dumas', name: 'Dumas Sunrise Trail', coords: '21.092° N, 72.712° E', x: 22, y: 82, active: 18, note: 'Weekend Cycling & Treks', trend: '5:45 AM peak' },
@@ -149,23 +216,20 @@ const RADAR_NODES = [
 
 export default function LandingPage() {
   // Hero Interactive States
-  const [activeTab, setActiveTab] = useState<'stream' | 'radar' | 'ticket'>('stream');
-  const [selectedChannelId, setSelectedChannelId] = useState<string>('tech');
+  const [heroView, setHeroView] = useState<'feed' | 'radar' | 'events'>('feed');
+  const [activeChannelId, setActiveChannelId] = useState<string>('tech');
   const [fuzzRadius, setFuzzRadius] = useState<number>(300);
   const [selectedNodeId, setSelectedNodeId] = useState<string>('vesu');
-  const [reactions, setReactions] = useState<{ [key: string]: number }>({
-    'tech-1-🔥': 14,
-    'tech-1-🚀': 9,
-    'tech-2-🙌': 11,
-    'treks-1-🌅': 19,
-    'foodies-1-☕': 24,
+  const [postUpvotes, setPostUpvotes] = useState<{ [key: string]: number }>({
+    'tech-1': 24,
+    'tech-2': 18,
+    'treks-1': 32,
+    'foodies-1': 41,
   });
 
-  // Interactive Bento & Card States
-  const [bentoCategory, setBentoCategory] = useState<string>('Custom');
+  // Bento Interactive States
+  const [bentoCategory, setBentoCategory] = useState<GroupCategory>('Custom');
   const [privacyMode, setPrivacyMode] = useState<'shielded' | 'raw'>('shielded');
-  const [rsvpCount, setRsvpCount] = useState<number>(18);
-  const [isRsvpd, setIsRsvpd] = useState<boolean>(false);
 
   // VIP Promo Pass State
   const [promoCode, setPromoCode] = useState<string>('');
@@ -176,8 +240,8 @@ export default function LandingPage() {
   const [activeFaqCategory, setActiveFaqCategory] = useState<string>('all');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
 
-  const handleReactionClick = (key: string) => {
-    setReactions((prev) => ({
+  const handleUpvote = (key: string) => {
+    setPostUpvotes((prev) => ({
       ...prev,
       [key]: (prev[key] || 0) + 1,
     }));
@@ -205,22 +269,9 @@ export default function LandingPage() {
     }
   };
 
-  const currentChannel = HERO_CHANNELS.find((c) => c.id === selectedChannelId) || HERO_CHANNELS[0];
-  const currentNode = RADAR_NODES.find((n) => n.id === selectedNodeId) || RADAR_NODES[0];
-  const activeBentoGroup = {
-    id: 'preview',
-    name: `${bentoCategory} Circle Surat`,
-    description: 'Hyper-local circle connecting verified Surat members.',
-    category: bentoCategory as GroupCategory,
-    member_count: 1,
-    max_members: 256,
-    cover_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
-    rules: 'Respect community members',
-    is_public: true,
-    admin_name: 'CityCircle Surat',
-    created_at: new Date().toISOString(),
-  };
-  const bentoConfig = CATEGORY_CONFIG[activeBentoGroup.category as GroupCategory] || CATEGORY_CONFIG.Custom;
+  const activeChannel = HERO_FEED_DATA.find((c) => c.id === activeChannelId) || HERO_FEED_DATA[0];
+  const activeBentoGroup = LANDING_GROUPS.find((g) => g.category === bentoCategory) || LANDING_GROUPS[0];
+  const bentoConfig = CATEGORY_CONFIG[bentoCategory];
   const BentoIcon = bentoConfig.icon;
 
   const faqs = [
@@ -263,16 +314,16 @@ export default function LandingPage() {
       <PWAInstallPrompt />
 
       {/* Warm Ambient Radial Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] animate-glow-breathe" />
-        <div className="absolute top-[10%] right-[15%] w-[420px] h-[420px] rounded-full bg-accent/10 blur-[110px] animate-glow-breathe [animation-delay:3s]" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[620px] pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-[-10%] left-[20%] w-[520px] h-[520px] rounded-full bg-primary/10 blur-[120px] animate-glow-breathe" />
+        <div className="absolute top-[10%] right-[15%] w-[440px] h-[440px] rounded-full bg-accent/10 blur-[110px] animate-glow-breathe [animation-delay:3s]" />
       </div>
 
-      {/* NAVIGATION BAR */}
-      <header className="sticky top-0 z-50 px-4 sm:px-6 pt-4 pb-2">
-        <nav className="max-w-6xl mx-auto h-16 rounded-2xl app-glass-card px-4 sm:px-6 flex items-center justify-between transition-all">
+      {/* FLOATING PILL NAVBAR (Onload Reveal Down) */}
+      <header className="sticky top-0 z-50 px-4 sm:px-6 pt-4 pb-2 animate-reveal-down">
+        <nav className="max-w-5xl mx-auto h-16 rounded-full app-glass-card px-5 sm:px-7 flex items-center justify-between shadow-sm transition-all">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-sm shadow-primary/20 group-hover:scale-105 transition-transform">
               C
             </div>
             <div className="flex items-center gap-2">
@@ -287,12 +338,12 @@ export default function LandingPage() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-7 text-xs font-semibold text-muted-foreground">
-            <a href="#hero-command" className="hover:text-foreground transition-colors">
-              Command Deck
+          <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-muted-foreground">
+            <a href="#hero-viewport" className="hover:text-foreground transition-colors">
+              Platform
             </a>
             <a href="#guilds" className="hover:text-foreground transition-colors">
-              Guilds
+              Circles
             </a>
             <a href="#privacy-vault" className="hover:text-foreground transition-colors">
               Privacy Vault
@@ -307,14 +358,14 @@ export default function LandingPage() {
           </div>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <Link href="/auth/login">
-              <Button variant="ghost" size="sm" className="text-xs font-semibold text-muted-foreground hover:text-foreground h-9 px-3.5">
+              <Button variant="ghost" size="sm" className="text-xs font-semibold text-muted-foreground hover:text-foreground h-9 px-3 rounded-full">
                 Sign In
               </Button>
             </Link>
             <Link href="/auth/signup">
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-9 px-4 rounded-xl shadow-md shadow-primary/20 hover:scale-[1.02] transition-transform">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-9 px-4 rounded-full shadow-sm shadow-primary/20 hover:scale-[1.02] transition-transform">
                 Join Surat Cohort
               </Button>
             </Link>
@@ -322,23 +373,23 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="relative pt-10 pb-16 md:pt-16 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
+      {/* HERO SECTION WITH STAGGERED REVEAL ONLOAD */}
+      <section className="relative pt-12 pb-16 md:pt-16 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          {/* Eyebrow Chip */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full app-pill text-xs font-semibold text-foreground mb-8 border border-border shadow-xs animate-float-smooth">
+          {/* Eyebrow Pill */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full app-pill text-xs font-semibold text-foreground mb-6 border border-border shadow-xs animate-reveal-up [animation-delay:100ms] opacity-0 [animation-fill-mode:forwards]">
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
-            <span className="text-muted-foreground">Founding Member Pass:</span>
+            <span className="text-muted-foreground">Founding Pass:</span>
             <span className="font-bold text-primary">318 / 400 Claimed</span>
             <span className="text-border">·</span>
-            <span className="text-accent font-bold">₹0 Free</span>
+            <span className="text-accent font-bold">₹0 Free Access</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground font-heading leading-[1.12] mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-[-0.035em] text-foreground font-heading leading-[1.1] mb-6 animate-reveal-up [animation-delay:220ms] opacity-0 [animation-fill-mode:forwards]">
             Real Surat Communities. <br />
             <span className="text-primary underline decoration-accent decoration-wavy decoration-3 underline-offset-8">
               Verified & Real-World.
@@ -346,54 +397,55 @@ export default function LandingPage() {
           </h1>
 
           {/* Subheading */}
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10 font-normal leading-relaxed">
-            The private local network for tech founders, weekend trekkers, specialty coffee foodies, and university alumni in Surat. 
-            Zero contact exposure, 300–500m fuzzed maps, and offline meetups that actually happen.
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 font-normal leading-relaxed animate-reveal-up [animation-delay:340ms] opacity-0 [animation-fill-mode:forwards]">
+            The private local network connecting verified tech founders, weekend trekkers, specialty foodies, and university alumni in Surat. 
+            Zero phone leaks, 300–500m fuzzed maps, and offline meetups that translate to real life.
           </p>
 
-          {/* Dual Magnetic Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto mb-10">
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto mb-8 animate-reveal-up [animation-delay:460ms] opacity-0 [animation-fill-mode:forwards]">
             <Link href="/auth/signup" className="w-full sm:w-auto flex-1">
-              <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm h-12 rounded-2xl shadow-md shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all">
-                <span>Claim Free Pass</span>
+              <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm h-12 rounded-full shadow-md shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all">
+                <span>Claim Free Pass — ₹0</span>
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <a href="#hero-command" className="w-full sm:w-auto flex-1">
-              <Button variant="outline" size="lg" className="w-full h-12 rounded-2xl border-border bg-card/80 text-foreground font-semibold text-sm hover:bg-card transition-all">
-                Explore Command Deck
+            <a href="#hero-viewport" className="w-full sm:w-auto flex-1">
+              <Button variant="outline" size="lg" className="w-full h-12 rounded-full border-border bg-card/90 text-foreground font-semibold text-sm hover:bg-card transition-all">
+                Explore Live Platform
               </Button>
             </a>
           </div>
 
-          {/* Micro Trust Indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-medium text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              <span>Phone Verified</span>
+          {/* Social Proof Avatar Row */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs text-muted-foreground animate-reveal-up [animation-delay:580ms] opacity-0 [animation-fill-mode:forwards]">
+            <div className="flex -space-x-2">
+              <img className="inline-block h-7 w-7 rounded-full ring-2 ring-background object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Member" />
+              <img className="inline-block h-7 w-7 rounded-full ring-2 ring-background object-cover" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=80&q=80" alt="Member" />
+              <img className="inline-block h-7 w-7 rounded-full ring-2 ring-background object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Member" />
+              <img className="inline-block h-7 w-7 rounded-full ring-2 ring-background object-cover" src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=80&q=80" alt="Member" />
             </div>
-            <div className="flex items-center gap-1.5">
-              <Lock className="w-4 h-4 text-primary" />
-              <span>PostgreSQL RLS Protected</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span>300–500m Fuzzed GPS</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-primary" />
-              <span>Indian IT Rules 2021</span>
+            <div className="flex items-center gap-1">
+              <div className="flex text-amber-500">
+                <Star className="w-3.5 h-3.5 fill-current" />
+                <Star className="w-3.5 h-3.5 fill-current" />
+                <Star className="w-3.5 h-3.5 fill-current" />
+                <Star className="w-3.5 h-3.5 fill-current" />
+                <Star className="w-3.5 h-3.5 fill-current" />
+              </div>
+              <span className="font-semibold text-foreground ml-1">4.9/5 rating</span>
+              <span>from 340+ verified Surat locals</span>
             </div>
           </div>
         </div>
 
-        {/* HERO COMMAND CENTER (Interactive Living Console) */}
+        {/* HERO INTERACTIVE APP VIEWPORT (Stagger Scale Onload) */}
         <div
-          id="hero-command"
-          className="rounded-3xl app-glass-card overflow-hidden border border-border shadow-xl relative transition-all"
+          id="hero-viewport"
+          className="rounded-3xl app-glass-card overflow-hidden border border-border shadow-xl relative transition-all animate-reveal-scale [animation-delay:680ms] opacity-0 [animation-fill-mode:forwards]"
         >
-          {/* Console Header Bar */}
-          <div className="px-4 sm:px-6 py-3.5 bg-muted/60 border-b border-border flex flex-wrap items-center justify-between gap-3">
+          {/* Viewport Top Bar */}
+          <div className="px-5 py-3.5 bg-muted/60 border-b border-border flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-danger/80" />
@@ -401,16 +453,16 @@ export default function LandingPage() {
                 <span className="w-3 h-3 rounded-full bg-success/80" />
               </div>
               <span className="text-xs font-mono text-muted-foreground hidden sm:inline">
-                citycircle://surat.hub/live-console
+                citycircle-surat.app/live-hub
               </span>
             </div>
 
-            {/* Interactive Console Mode Switcher */}
+            {/* Interactive View Selector */}
             <div className="flex items-center p-1 rounded-xl bg-background border border-border text-xs font-semibold">
               <button
-                onClick={() => setActiveTab('stream')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  activeTab === 'stream'
+                onClick={() => setHeroView('feed')}
+                className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  heroView === 'feed'
                     ? 'bg-primary text-primary-foreground font-bold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
@@ -419,9 +471,9 @@ export default function LandingPage() {
                 <span>Live Feed</span>
               </button>
               <button
-                onClick={() => setActiveTab('radar')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  activeTab === 'radar'
+                onClick={() => setHeroView('radar')}
+                className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  heroView === 'radar'
                     ? 'bg-primary text-primary-foreground font-bold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
@@ -430,36 +482,36 @@ export default function LandingPage() {
                 <span>Surat Radar</span>
               </button>
               <button
-                onClick={() => setActiveTab('ticket')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  activeTab === 'ticket'
+                onClick={() => setHeroView('events')}
+                className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  heroView === 'events'
                     ? 'bg-primary text-primary-foreground font-bold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Event Pass</span>
+                <span>Upcoming Meetups</span>
               </button>
             </div>
           </div>
 
-          {/* Console Body */}
-          <div className="p-4 sm:p-7 min-h-[400px] bg-card">
-            {/* VIEW 1: LIVE FEED & AUDIO HOPS */}
-            {activeTab === 'stream' && (
+          {/* Viewport Body */}
+          <div className="p-4 sm:p-7 min-h-[420px] bg-card">
+            {/* VIEW 1: LIVE FEED & AUDIO STAGES */}
+            {heroView === 'feed' && (
               <div>
                 {/* Channel Selector Chips */}
                 <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
-                  {HERO_CHANNELS.map((ch) => {
-                    const isSelected = selectedChannelId === ch.id;
+                  {HERO_FEED_DATA.map((ch) => {
+                    const isSelected = activeChannelId === ch.id;
                     return (
                       <button
                         key={ch.id}
-                        onClick={() => setSelectedChannelId(ch.id)}
+                        onClick={() => setActiveChannelId(ch.id)}
                         className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
                           isSelected
                             ? 'bg-primary/15 text-primary border border-primary/30 shadow-xs'
-                            : 'bg-muted/40 text-muted-foreground border border-transparent hover:bg-muted'
+                            : 'bg-muted/50 text-muted-foreground border border-transparent hover:bg-muted'
                         }`}
                       >
                         <span>{ch.tag}</span>
@@ -470,9 +522,9 @@ export default function LandingPage() {
                   })}
                 </div>
 
-                {/* Live Audio Room Banner if Active */}
-                {currentChannel.audioLive && (
-                  <div className="mb-5 p-3.5 rounded-2xl bg-secondary/70 border border-primary/20 flex items-center justify-between gap-3">
+                {/* Live Voice Stage Banner */}
+                {activeChannel.audioRoom.active && (
+                  <div className="mb-5 p-3.5 rounded-2xl bg-secondary/80 border border-primary/20 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 animate-pulse">
                         <Volume2 className="w-4 h-4" />
@@ -480,84 +532,84 @@ export default function LandingPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.2 rounded-full border border-primary/20">
-                            Live Voice Room
+                            Live Voice Stage
                           </span>
-                          <span className="text-xs font-bold text-foreground">{currentChannel.audioTitle}</span>
+                          <span className="text-xs font-bold text-foreground">{activeChannel.audioRoom.title}</span>
                         </div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
-                          Speakers: {currentChannel.audioSpeakers.join(' · ')}
+                          {activeChannel.upcomingEvent}
                         </div>
                       </div>
                     </div>
                     <span className="text-[11px] font-bold text-primary px-3 py-1 rounded-xl bg-primary/10 border border-primary/20 hidden sm:inline">
-                      18 Listening
+                      {activeChannel.audioRoom.listeners} Listening
                     </span>
                   </div>
                 )}
 
-                {/* Simulated Message Cards */}
+                {/* Simulated Feed Posts */}
                 <div className="space-y-3.5 max-w-2xl mx-auto">
-                  {currentChannel.messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className="p-4 rounded-2xl bg-card border border-border shadow-xs hover:border-primary/40 transition-all flex items-start gap-3.5"
-                    >
-                      <img
-                        src={msg.avatar}
-                        alt={msg.user}
-                        className="w-10 h-10 rounded-xl object-cover shrink-0 border border-border"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-foreground">{msg.user}</span>
-                            <span className="text-[10px] font-mono text-muted-foreground">{msg.handle}</span>
-                            <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
-                              {msg.badge}
-                            </span>
+                  {activeChannel.posts.map((post) => {
+                    const postKey = `${activeChannel.id}-${post.id}`;
+                    const upvoteCount = postUpvotes[postKey] ?? post.metrics.upvotes;
+                    return (
+                      <div
+                        key={post.id}
+                        className="p-4 rounded-2xl bg-card border border-border shadow-xs hover:border-primary/40 transition-all flex items-start gap-3.5"
+                      >
+                        <img
+                          src={post.avatar}
+                          alt={post.author}
+                          className="w-10 h-10 rounded-xl object-cover shrink-0 border border-border"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-foreground">{post.author}</span>
+                              <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                {post.role}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">{post.timestamp}</span>
                           </div>
-                          <span className="text-[10px] text-muted-foreground">{msg.time}</span>
-                        </div>
-                        <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed mb-3">
-                          {msg.text}
-                        </p>
+                          <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed mb-3">
+                            {post.content}
+                          </p>
 
-                        {/* Interactive Reaction Buttons */}
-                        <div className="flex items-center gap-2">
-                          {Object.entries(msg.reactions).map(([emoji, count]) => {
-                            const reactionKey = `${currentChannel.id}-${msg.id}-${emoji}`;
-                            const currentCount = reactions[reactionKey] ?? count;
-                            return (
-                              <button
-                                key={emoji}
-                                onClick={() => handleReactionClick(reactionKey)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-primary/10 hover:text-primary text-xs font-semibold text-muted-foreground border border-border transition-all active:scale-95"
-                              >
-                                <span>{emoji}</span>
-                                <span className="font-mono text-[11px]">{currentCount}</span>
-                              </button>
-                            );
-                          })}
+                          {/* Interactive Vector Action Counters */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleUpvote(postKey)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-primary/10 hover:text-primary text-xs font-semibold text-muted-foreground border border-border transition-all active:scale-95"
+                            >
+                              <ThumbsUp className="w-3.5 h-3.5" />
+                              <span className="font-mono text-[11px]">{upvoteCount}</span>
+                            </button>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/30 text-xs font-semibold text-muted-foreground border border-border/50">
+                              <Bookmark className="w-3.5 h-3.5" />
+                              <span className="font-mono text-[11px]">{post.metrics.bookmarks}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
-                  {/* Typing Pulse */}
+                  {/* Typing Pulse Indicator */}
                   <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground">
                     <span className="flex gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
                       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.2s]" />
                       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.4s]" />
                     </span>
-                    <span className="text-[11px]">3 verified members active in this circle...</span>
+                    <span className="text-[11px]">3 verified members active in this circle</span>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* VIEW 2: SURAT RADAR & DENSITY MATRIX */}
-            {activeTab === 'radar' && (
+            {/* VIEW 2: SURAT PROXIMITY RADAR MATRIX */}
+            {heroView === 'radar' && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
                   <div>
@@ -571,7 +623,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground">Fuzzing Halo:</span>
+                    <span className="text-xs font-semibold text-muted-foreground">Fuzzing Radius:</span>
                     <div className="flex p-0.5 rounded-xl bg-muted border border-border text-xs">
                       <button
                         onClick={() => setFuzzRadius(300)}
@@ -639,7 +691,7 @@ export default function LandingPage() {
                           </div>
                         </div>
 
-                        {/* Interactive Tooltip Card */}
+                        {/* Tooltip Card */}
                         <div
                           className={`absolute top-9 left-1/2 -translate-x-1/2 px-3 py-2 rounded-xl bg-card border border-border text-xs whitespace-nowrap shadow-xl transition-all z-20 ${
                             isSelected
@@ -661,102 +713,88 @@ export default function LandingPage() {
               </div>
             )}
 
-            {/* VIEW 3: EVENT PASS MOCKUP */}
-            {activeTab === 'ticket' && (
-              <div className="max-w-xl mx-auto py-2">
-                <div className="p-6 rounded-3xl bg-secondary/50 border-2 border-dashed border-border relative overflow-hidden holographic-gold shadow-md">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-                      Surat Tech & Startup Circle
-                    </span>
-                    <span className="text-xs font-black text-accent bg-accent/15 px-3 py-1 rounded-full border border-accent/30">
-                      VIP PASS · ₹0 FREE
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl sm:text-2xl font-black text-foreground font-heading mb-2">
-                    Surat AI & Founder Mixer #04
-                  </h3>
-                  <div className="space-y-1.5 text-xs text-muted-foreground mb-6">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      <span>Saturday, Oct 18 · 5:30 PM – 8:30 PM IST</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      <span>The Roastery Cafe, VIP Road, Vesu, Surat</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-border flex items-center justify-between">
+            {/* VIEW 3: REAL-WORLD MEETUPS & RSVP CARDS */}
+            {heroView === 'events' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-2">
+                {LANDING_MEETUPS.map((meetup) => (
+                  <div
+                    key={meetup.id}
+                    className="p-5 rounded-2xl bg-secondary/40 border border-border flex flex-col justify-between hover:border-primary/40 hover:shadow-md transition-all"
+                  >
                     <div>
-                      <div className="text-xs font-semibold text-foreground">
-                        <span className="text-primary font-bold">{rsvpCount}</span> / 24 Seats Filled
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md">
+                          {meetup.group_name}
+                        </span>
+                        <span className="text-xs font-black text-accent bg-accent/15 px-2.5 py-0.5 rounded-md">
+                          {meetup.ticket_price === 0 ? 'FREE RSVP' : `₹${meetup.ticket_price}`}
+                        </span>
                       </div>
-                      <div className="text-[10px] text-muted-foreground">Coffee & Demo Slots Included</div>
+                      <h4 className="text-base font-bold text-foreground mb-1.5">{meetup.title}</h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{meetup.description}</p>
                     </div>
 
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        if (!isRsvpd) {
-                          setIsRsvpd(true);
-                          setRsvpCount((c) => c + 1);
-                        }
-                      }}
-                      className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all ${
-                        isRsvpd
-                          ? 'bg-success text-white shadow-xs'
-                          : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                      }`}
-                    >
-                      {isRsvpd ? '✓ RSVP Confirmed!' : 'Simulate 1-Click RSVP'}
-                    </Button>
+                    <div className="space-y-3 pt-3 border-t border-border/70">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="truncate">{meetup.place}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-foreground">
+                          {meetup.rsvps_count} / {meetup.capacity} Going
+                        </span>
+                        <Link href="/meetups">
+                          <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-8 px-3.5">
+                            RSVP Now
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* MARQUEE TICKER */}
+      {/* CONTINUOUS MARQUEE TICKER (Vector Icons, No Emojis) */}
       <div className="w-full bg-muted/50 border-y border-border py-3.5 overflow-hidden">
         <div className="animate-marquee items-center gap-8 text-xs font-semibold text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-            <span className="text-foreground">⚡ Surat Tech Circle hosted AI Mixer at Vesu</span>
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            <span className="text-foreground">Surat Tech Circle hosted AI Mixer at Vesu</span>
           </div>
           <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-primary" />
+            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
             <span className="text-foreground">100% Phone Verified & Indian IT Rules 2021 Compliant</span>
           </div>
           <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-accent" />
-            <span className="text-foreground">🚴 Dumas Sunrise Ride organized with 14 RSVPs</span>
+            <Compass className="w-3.5 h-3.5 text-accent" />
+            <span className="text-foreground">Dumas Sunrise Ride organized with 14 RSVPs</span>
           </div>
           <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-primary" />
+            <Lock className="w-3.5 h-3.5 text-primary" />
             <span className="text-foreground">PostgreSQL Row-Level Security: Zero Contact Leak</span>
           </div>
           <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-accent" />
-            <span className="text-foreground">🎓 34 SVNIT Alumni joined this week</span>
+            <GraduationCap className="w-3.5 h-3.5 text-accent" />
+            <span className="text-foreground">34 SVNIT Alumni joined this week</span>
           </div>
           <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-            <span className="text-foreground">☕ Surat Foodies discovered new artisanal roasters in Piplod</span>
+            <Coffee className="w-3.5 h-3.5 text-primary" />
+            <span className="text-foreground">Surat Foodies discovered new artisanal roasters in Piplod</span>
           </div>
           <span className="text-border">/</span>
         </div>
       </div>
 
-      {/* BENTO GRID */}
+      {/* BENTO GRID ("Architecture of Trust") */}
       <section id="guilds" className="py-16 md:py-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
@@ -912,8 +950,9 @@ export default function LandingPage() {
                         </span>
                         <span className="font-mono text-[11px]">21.1442° N, 72.7719° E</span>
                       </div>
-                      <div className="text-[11px] text-muted-foreground">
-                        ⚠️ Raw coordinates are auto-scrambled before database insertion.
+                      <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-danger shrink-0" />
+                        <span>Raw coordinates are auto-scrambled before database insertion.</span>
                       </div>
                     </>
                   )}
@@ -1078,11 +1117,11 @@ export default function LandingPage() {
             </p>
             <div className="flex items-center gap-3 pt-4 border-t border-border">
               <div className="w-9 h-9 rounded-full bg-accent/20 text-accent-foreground flex items-center justify-center font-bold text-xs">
-                PS
+                AM
               </div>
               <div>
-                <div className="text-xs font-bold text-foreground">Pratik S.</div>
-                <div className="text-[11px] text-muted-foreground">Lead, Surat Cycling Club</div>
+                <div className="text-xs font-bold text-foreground">Aarav M.</div>
+                <div className="text-[11px] text-muted-foreground">Lead, Weekend Trekkers</div>
               </div>
             </div>
           </div>
@@ -1196,6 +1235,9 @@ export default function LandingPage() {
             >
               llms.txt (AI Knowledge)
             </a>
+            <Link href="/admin" className="hover:text-primary transition-colors">
+              Admin Portal
+            </Link>
           </div>
         </div>
       </footer>
