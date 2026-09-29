@@ -422,7 +422,7 @@ export default function LandingPage() {
             </Link>
             <Link href="/auth/signup">
               <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-8 sm:h-9 px-3.5 sm:px-4 rounded-full shadow-sm shadow-primary/20 hover:scale-[1.02] transition-transform">
-                Join Surat Cohort
+                Join Community
               </Button>
             </Link>
           </div>
@@ -453,7 +453,7 @@ export default function LandingPage() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-3 py-2 rounded-xl hover:bg-muted/80 transition-colors flex items-center justify-between"
               >
-                <span>Platform Demo</span>
+                <span>Live Feed & Circles</span>
                 <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
               </a>
               <a
@@ -486,7 +486,7 @@ export default function LandingPage() {
                 className="px-3 py-2 rounded-xl hover:bg-accent/15 transition-colors flex items-center justify-between text-accent font-bold"
               >
                 <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4" /> Founding VIP Pass
+                  <Sparkles className="w-4 h-4" /> Founding Resident Pass
                 </span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
@@ -508,7 +508,7 @@ export default function LandingPage() {
               </Link>
               <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)} className="w-full">
                 <Button size="sm" className="w-full h-10 text-xs font-bold rounded-2xl bg-primary text-primary-foreground shadow-xs">
-                  Join Surat Cohort
+                  Join Surat Community
                 </Button>
               </Link>
             </div>
@@ -525,10 +525,10 @@ export default function LandingPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
-            <span className="text-muted-foreground">Surat Founding Cohort:</span>
-            <span className="font-bold text-primary">318 / 400 Spots Claimed</span>
+            <span className="text-muted-foreground">Surat Verified Network:</span>
+            <span className="font-bold text-primary">340+ Active Community Members</span>
             <span className="text-border">·</span>
-            <span className="text-accent font-bold">Free Lifetime Access</span>
+            <span className="text-accent font-bold">Free Lifetime Membership</span>
           </div>
 
           {/* Headline */}
@@ -549,13 +549,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto mb-8 animate-reveal-up [animation-delay:460ms] opacity-0 [animation-fill-mode:forwards]">
             <Link href="/auth/signup" className="w-full sm:w-auto flex-1">
               <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm h-12 rounded-full shadow-md shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all">
-                <span>Join Surat Cohort</span>
+                <span>Join the Community</span>
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
             <a href="#hero-viewport" className="w-full sm:w-auto flex-1">
               <Button variant="outline" size="lg" className="w-full h-12 rounded-full border-border bg-card/90 text-foreground font-semibold text-sm hover:bg-card transition-all">
-                Explore Platform Demo
+                Explore Live Circles & Map
               </Button>
             </a>
           </div>
@@ -1384,6 +1384,35 @@ export default function LandingPage() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* FINAL COMMUNITY CALL TO ACTION */}
+      <section className="py-16 md:py-20 px-4 sm:px-6 max-w-5xl mx-auto w-full">
+        <div className="rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden app-glass-card border border-primary/20 bg-linear-to-b from-primary/5 via-card to-background shadow-xl">
+          <div className="max-w-2xl mx-auto space-y-4">
+            <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary rounded-full border border-primary/20">
+              Join Your Local Surat Circle
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black font-heading tracking-tight text-foreground">
+              Ready to experience real-world Surat community life?
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Step beyond cluttered chat groups. Join verified local circles across tech, food, trails, and cultural mixers with complete privacy protection.
+            </p>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link href="/auth/signup" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm h-11 px-6 rounded-full shadow-md shadow-primary/20">
+                  Join the Community <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Button>
+              </Link>
+              <Link href="/groups" className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto border-border bg-card hover:bg-muted text-foreground text-sm h-11 px-6 rounded-full font-semibold">
+                  Browse Active Circles
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
