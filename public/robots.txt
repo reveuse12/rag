@@ -1,0 +1,38 @@
+# robots.txt for CityCircle Surat
+# Optimized for standard search engines & Generative AI Search Crawlers (CRAWLABILITY & CONFIGURATION)
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Allow: /api/groups
+Allow: /api/groups/*/messages
+
+# AI / LLM Web Crawlers
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Standard Sitemap and AI Context Declarations
+Sitemap: https://rag-local.vercel.app/sitemap.xml
+# LLM Knowledge Graph: https://rag-local.vercel.app/llms.txt

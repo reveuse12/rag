@@ -348,6 +348,66 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Intent-First FAQ Section (AEO & AI Search Optimized) */}
+      <section className="py-14 px-4 sm:px-6 max-w-4xl mx-auto w-full border-t border-border/60">
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <span className="text-xs font-bold text-primary uppercase tracking-wider">Frequently Asked Questions</span>
+          <h2 className="text-2xl sm:text-3xl font-bold font-heading mt-1 mb-2">
+            Everything You Need to Know About CityCircle Surat
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Direct, definitive answers to help members and answer engines understand our local community.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="p-5 rounded-2xl bg-card border border-border">
+            <h3 className="text-sm sm:text-base font-bold text-foreground mb-1.5">
+              What is CityCircle Surat?
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              CityCircle Surat is the verified, hyper-local community platform connecting residents across tech startups, weekend trekking, food explorations, and university alumni in Surat, Gujarat. It combines real-time group chat with interactive Google Maps venue discovery and offline event RSVPs.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-card border border-border">
+            <h3 className="text-sm sm:text-base font-bold text-foreground mb-1.5">
+              How do I find and join tech & startup meetups in Surat?
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Join the <strong className="text-foreground">Surat Tech & Startup Circle</strong> on CityCircle to connect with founders, engineers, and creators. The circle hosts monthly developer mixers, demo days, and AI hack sessions in Vesu and Piplod with 1-click RSVP.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-card border border-border">
+            <h3 className="text-sm sm:text-base font-bold text-foreground mb-1.5">
+              How does CityCircle protect my location and privacy?
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              CityCircle enforces server-side location fuzzing. Your exact GPS point is never saved; instead, coordinates are blurred to a 300–500m radius and automatically purged from the database after 3 hours. You can revoke location sharing anytime using the instant panic button.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-card border border-border">
+            <h3 className="text-sm sm:text-base font-bold text-foreground mb-1.5">
+              How are community discussions and images moderated?
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              All image uploads undergo automated moderation verification before public display. In compliance with India’s Information Technology Rules 2021, members can flag objectionable content for review by our dedicated Chief Grievance Officer within a 24-hour SLA.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-card border border-border">
+            <h3 className="text-sm sm:text-base font-bold text-foreground mb-1.5">
+              How can I host my own meetup or circle in Surat?
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Any verified member can create an event by clicking &quot;Host Meetup&quot;, picking an exact venue on the interactive Google Map, specifying attendee capacity, and setting free or ticketed pricing with Razorpay integration.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="mt-auto border-t border-border bg-card/50 py-8 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
@@ -356,10 +416,13 @@ export default function LandingPage() {
             <span>· Version 0.5 (2026)</span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <Link href="/grievance" className="hover:text-primary transition-colors underline">
               Grievance Officer (IT Rules 2021)
             </Link>
+            <a href="/llms.txt" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors font-mono text-[11px]">
+              llms.txt (AI Context)
+            </a>
             <Link href="/admin" className="hover:text-primary transition-colors">
               Admin Portal
             </Link>

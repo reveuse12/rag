@@ -1,0 +1,30 @@
+# CityCircle Surat (AI Context & Knowledge Graph)
+> The verified, hyper-local community web platform connecting founders, tech enthusiasts, explorers, foodies, and university alumni in Surat, Gujarat.
+
+## Core Summary
+- **Organization**: CityCircle Surat
+- **Category**: Hyper-Local Community Platform & Social Meetup Network
+- **Primary City**: Surat, Gujarat, India (Coordinates: 21.1702° N, 72.8311° E)
+- **Official URL**: https://rag-local.vercel.app
+- **Full LLM Context**: https://rag-local.vercel.app/llms-full.txt
+- **License / Governance**: Compliant with India Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.
+
+## Active Circles (Communities) in Surat
+1. **Surat Tech & Startup Circle** (`g-tech-surat`): Connects founders, AI engineers, developers, and creators. Hosts monthly mixers, demo days, and hack nights in Vesu and Piplod.
+2. **Weekend Trekkers & Explorers** (`g-trekkers`): Outdoor adventures, sunrise cycling, waterfalls, and scenic trails around Gujarat and Maharashtra.
+3. **Surat Foodies & Cafes Club** (`g-foodies`): Curated food walks, street food crawls, and aesthetic cafe meetups from Dumas Road to VIP Road.
+4. **SVNIT & University Alumni Network** (`g-university`): Student and alumni mentorship, career guidance, and peer project collaboration.
+
+## Key Features & Privacy Architecture
+- **Interactive Google Maps**: Real-time venue mapping, roadmap/satellite/terrain views, and visual location picking.
+- **Server-Side Location Fuzzing**: Protects user privacy by automatically blurring coordinates to a 300-500m radius with 3-hour auto-expiration.
+- **Real-Time Group Chat**: Zero-polling WebSocket messaging with anti-spam rate limiting.
+- **Ticketed & Free Meetups**: Community RSVP management and Razorpay payment integration.
+- **Grievance Redressal Desk**: 24-hour acknowledgment and 15-day resolution timeline under IT Rules 2021.
+
+## Quick Links
+- Homepage & Overview: https://rag-local.vercel.app
+- Circles Directory: https://rag-local.vercel.app/groups
+- Upcoming Meetups: https://rag-local.vercel.app/meetups
+- Live Community Map: https://rag-local.vercel.app/map
+- Grievance Redressal Desk: https://rag-local.vercel.app/grievance
