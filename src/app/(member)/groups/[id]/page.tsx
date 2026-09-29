@@ -21,6 +21,8 @@ import {
   FileText,
   X,
   Loader2,
+  Pin,
+  Smile,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Group, Meetup } from '@/types';
@@ -39,6 +41,8 @@ interface ChatMessage {
   timestamp: string;
 }
 
+const REACTION_EMOJIS = ['👍', '❤️', '🔥', '🚀', '😂', '🎉'];
+
 export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -56,6 +60,12 @@ export default function GroupDetailPage() {
   const [reportReason, setReportReason] = useState('');
   const [reportSuccess, setReportSuccess] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
+  const [showPinnedAnnouncement, setShowPinnedAnnouncement] = useState(true);
+
+  // Chat Reactions State: { [msgId]: { [emoji]: count } } & user's own reactions
+  const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
+  const [userReactions, setUserReactions] = useState<Record<string, string[]>>({});
+  const [activeReactionPickerMsgId, setActiveReactionPickerMsgId] = useState<string | null>(null);
 
   // Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -106,8 +116,49 @@ export default function GroupDetailPage() {
         // Default seed joined
         setIsJoined(['g-tech-surat', 'g-trekkers', 'g-foodies'].includes(groupId));
       }
+
+      // Load reactions
+      const savedReactions = localStorage.getItem(`cc_chat_reactions_${groupId}`);
+      if (savedReactions) {
+        try {
+          setReactions(JSON.parse(savedReactions));
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
   }, [groupId]);
+
+  const handleToggleReaction = (msgId: string, emoji: string) => {
+    setReactions((prev) => {
+      const msgReactions = { ...(prev[msgId] || {}) };
+      const userList = userReactions[msgId] || [];
+      const hasReacted = userList.includes(emoji);
+
+      if (hasReacted) {
+        msgReactions[emoji] = Math.max(0, (msgReactions[emoji] || 1) - 1);
+        if (msgReactions[emoji] === 0) delete msgReactions[emoji];
+        setUserReactions((u) => ({
+          ...u,
+          [msgId]: (u[msgId] || []).filter((e) => e !== emoji),
+        }));
+      } else {
+        msgReactions[emoji] = (msgReactions[emoji] || 0) + 1;
+        setUserReactions((u) => ({
+          ...u,
+          [msgId]: [...(u[msgId] || []), emoji],
+        }));
+      }
+
+      const updated = { ...prev, [msgId]: msgReactions };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`cc_chat_reactions_${groupId}`, JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    setActiveReactionPickerMsgId(null);
+  };
 
   const toggleJoin = () => {
     const nextState = !isJoined;
@@ -481,7 +532,7 @@ export default function GroupDetailPage() {
 
       {/* TAB 1: Real-time Group Chat Stream */}
       {activeTab === 'chat' && (
-        <div className="bg-card border border-border rounded-2xl flex flex-col h-[520px] shadow-xs overflow-hidden">
+        <div className="bg-card border border-border rounded-2xl flex flex-col h-[560px] shadow-xs overflow-hidden">
           {/* Chat Header Status Notice */}
           <div className="px-4 py-2 bg-primary/10 border-b border-primary/20 flex items-center justify-between text-[11px] text-primary">
             <span className="flex items-center gap-1 font-medium">
@@ -492,6 +543,25 @@ export default function GroupDetailPage() {
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" /> Real-time
             </span>
           </div>
+
+          {/* Pinned Circle Announcement Banner */}
+          {showPinnedAnnouncement && (
+            <div className="px-4 py-2.5 bg-accent/10 border-b border-accent/20 flex items-start justify-between gap-3 text-xs text-foreground">
+              <div className="flex items-start gap-2">
+                <Pin className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-bold text-accent">Pinned Announcement:</span> Welcome to {group.name}! Offline gathering is planned at Vesu this weekend. Remember to keep discussions respectful & localized.
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPinnedAnnouncement(false)}
+                className="text-muted-foreground hover:text-foreground shrink-0 p-0.5 rounded-sm"
+                title="Dismiss announcement"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Messages Stream */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -507,10 +577,14 @@ export default function GroupDetailPage() {
             ) : (
               messages.map((msg) => {
                 const isMe = msg.sender_id === activeUser.id;
+                const msgReactions = reactions[msg.id] || {};
+                const userReactionList = userReactions[msg.id] || [];
+                const isPickerOpen = activeReactionPickerMsgId === msg.id;
+
                 return (
                   <div
                     key={msg.id}
-                    className={`flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : ''}`}
+                    className={`flex items-start gap-2.5 group relative ${isMe ? 'flex-row-reverse' : ''}`}
                   >
                     <img
                       src={msg.sender_avatar}
@@ -531,7 +605,7 @@ export default function GroupDetailPage() {
                       </div>
 
                       <div
-                        className={`p-3 rounded-2xl text-xs sm:text-sm ${
+                        className={`p-3 rounded-2xl text-xs sm:text-sm relative ${
                           isMe
                             ? 'bg-primary text-primary-foreground rounded-tr-xs shadow-xs'
                             : 'bg-muted/70 text-foreground border border-border rounded-tl-xs shadow-xs'
@@ -562,6 +636,59 @@ export default function GroupDetailPage() {
                             )}
                           </div>
                         )}
+                      </div>
+
+                      {/* Emoji Reactions Bar */}
+                      <div className="flex flex-wrap items-center gap-1 mt-1 px-1">
+                        {/* Render Active Reactions */}
+                        {Object.entries(msgReactions).map(([emoji, count]) => {
+                          if (count <= 0) return null;
+                          const userHasReacted = userReactionList.includes(emoji);
+                          return (
+                            <button
+                              key={emoji}
+                              onClick={() => handleToggleReaction(msg.id, emoji)}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold transition-transform active:scale-95 border ${
+                                userHasReacted
+                                  ? 'bg-primary/20 border-primary/40 text-primary'
+                                  : 'bg-card border-border hover:bg-muted text-foreground'
+                              }`}
+                            >
+                              <span>{emoji}</span>
+                              <span className="text-[10px]">{count}</span>
+                            </button>
+                          );
+                        })}
+
+                        {/* Add Reaction Button */}
+                        <div className="relative inline-block">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveReactionPickerMsgId(isPickerOpen ? null : msg.id)
+                            }
+                            className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors opacity-70 group-hover:opacity-100"
+                            title="Add reaction"
+                          >
+                            <Smile className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Reaction Picker Popup */}
+                          {isPickerOpen && (
+                            <div className="absolute bottom-full mb-1 left-0 z-50 bg-card border border-border shadow-xl rounded-full p-1 flex items-center gap-1 animate-in zoom-in-90 duration-150">
+                              {REACTION_EMOJIS.map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  onClick={() => handleToggleReaction(msg.id, emoji)}
+                                  className="w-7 h-7 rounded-full hover:bg-muted flex items-center justify-center text-sm transition-transform hover:scale-125"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

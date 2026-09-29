@@ -27,10 +27,13 @@ import {
   Loader2,
   X,
   Trash2,
+  Share2,
+  Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
-import { GroupCategory } from '@/types';
+import { GroupCategory, Meetup } from '@/types';
+import { INITIAL_GROUPS, CURRENT_USER } from '@/lib/data';
 
 export interface MapVenue {
   id: string;
@@ -41,6 +44,8 @@ export interface MapVenue {
   lng: number;
   area: string;
   isUserAdded?: boolean;
+  isMeetup?: boolean;
+  meetupData?: any;
 }
 
 export default function InteractiveSuratMap() {
@@ -49,9 +54,11 @@ export default function InteractiveSuratMap() {
   const placesLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const peopleLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const tempPinLayerRef = useRef<L.LayerGroup | null>(null);
+  const meetupsLayerGroupRef = useRef<L.LayerGroup | null>(null);
 
   // Dynamic venues state (loaded from user map interactions / localStorage)
   const [venues, setVenues] = useState<MapVenue[]>([]);
+  const [meetups, setMeetups] = useState<Meetup[]>([]);
   const [activeLayer, setActiveLayer] = useState<'both' | 'events' | 'people'>('both');
   const [peopleOptIn, setPeopleOptIn] = useState(false);
   const [panicActivated, setPanicActivated] = useState(false);
@@ -71,13 +78,32 @@ export default function InteractiveSuratMap() {
   const [newVenueDesc, setNewVenueDesc] = useState('');
   const [pickedCoords, setPickedCoords] = useState<{ lat: number; lng: number; address: string } | null>(null);
 
-  // Load venues on mount from localStorage
+  // Direct Host Meetup Modal State
+  const [showHostModal, setShowHostModal] = useState(false);
+  const [hostTitle, setHostTitle] = useState('');
+  const [hostDescription, setHostDescription] = useState('');
+  const [hostGroupId, setHostGroupId] = useState(INITIAL_GROUPS[0].id);
+  const [hostDateTime, setHostDateTime] = useState('');
+  const [hostCapacity, setHostCapacity] = useState(25);
+  const [hostTicketPrice, setHostTicketPrice] = useState(0);
+  const [hostSuccessToast, setHostSuccessToast] = useState<string | null>(null);
+
+  // Load venues and meetups on mount from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cc_user_pinned_venues');
-      if (saved) {
+      const savedVenues = localStorage.getItem('cc_user_pinned_venues');
+      if (savedVenues) {
         try {
-          setVenues(JSON.parse(saved));
+          setVenues(JSON.parse(savedVenues));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      const savedMeetups = localStorage.getItem('cc_surat_meetups');
+      if (savedMeetups) {
+        try {
+          setMeetups(JSON.parse(savedMeetups));
         } catch (e) {
           console.error(e);
         }
@@ -126,11 +152,12 @@ export default function InteractiveSuratMap() {
 
     tileLayerRef.current = tileLayer;
     placesLayerGroupRef.current = L.layerGroup().addTo(map);
+    meetupsLayerGroupRef.current = L.layerGroup().addTo(map);
     peopleLayerGroupRef.current = L.layerGroup().addTo(map);
     tempPinLayerRef.current = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
 
-    // Click anywhere on map -> Reverse geocode real address and offer "Pin This Location"
+    // Click anywhere on map -> Reverse geocode real address and offer "Pin" or "Host Meetup Here"
     map.on('click', async (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
 
@@ -141,23 +168,24 @@ export default function InteractiveSuratMap() {
           html: `
             <div style="
               background-color: #0F5257;
-              width: 32px;
-              height: 32px;
+              width: 34px;
+              height: 34px;
               border-radius: 50%;
               display: flex;
               align-items: center;
               justify-content: center;
               color: white;
-              font-size: 14px;
+              font-size: 15px;
               border: 3px solid #FFFFFF;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+              animation: bounce 1s infinite alternate;
             ">
               📍
             </div>
           `,
           className: 'picked-pin',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
+          iconSize: [34, 34],
+          iconAnchor: [17, 34],
         });
 
         const marker = L.marker([lat, lng], { icon: pickIcon }).addTo(tempPinLayerRef.current);
@@ -227,15 +255,18 @@ export default function InteractiveSuratMap() {
     tileLayerRef.current = newLayer;
   }, [mapType]);
 
-  // Render Real Places / Venues on Map
+  // Render Real Places / Venues & Meetups on Map
   useEffect(() => {
     const map = mapInstanceRef.current;
     const placesGroup = placesLayerGroupRef.current;
-    if (!map || !placesGroup) return;
+    const meetupsGroup = meetupsLayerGroupRef.current;
+    if (!map || !placesGroup || !meetupsGroup) return;
 
     placesGroup.clearLayers();
+    meetupsGroup.clearLayers();
 
     if (activeLayer === 'both' || activeLayer === 'events') {
+      // 1. Render Pinned Places
       venues.forEach((venue) => {
         const cfg = CATEGORY_CONFIG[venue.category] || CATEGORY_CONFIG['Custom'];
 
@@ -271,6 +302,11 @@ export default function InteractiveSuratMap() {
 
         marker.on('click', () => {
           setSelectedItem(venue);
+          setPickedCoords({
+            lat: venue.lat,
+            lng: venue.lng,
+            address: venue.area || venue.title,
+          });
           map.panTo([venue.lat, venue.lng], { animate: true });
         });
 
@@ -290,8 +326,98 @@ export default function InteractiveSuratMap() {
 
         placesGroup.addLayer(marker);
       });
+
+      // 2. Render Live Hosted Meetups on Map (Glowing Amber/Primary Beacons)
+      meetups.forEach((meetup, idx) => {
+        // Approximate or extract coords if available
+        let mLat = 21.1550 + (idx * 0.008 * (idx % 2 === 0 ? 1 : -1));
+        let mLng = 72.7800 + (idx * 0.006 * (idx % 3 === 0 ? 1 : -1));
+
+        if (meetup.place.toLowerCase().includes('vesu') || meetup.place.toLowerCase().includes('piplod')) {
+          mLat = 21.1450 + (idx * 0.003);
+          mLng = 72.7780 + (idx * 0.002);
+        } else if (meetup.place.toLowerCase().includes('svnit') || meetup.place.toLowerCase().includes('icchanath')) {
+          mLat = 21.1645;
+          mLng = 72.7845;
+        } else if (meetup.place.toLowerCase().includes('dumas')) {
+          mLat = 21.0850;
+          mLng = 72.7050;
+        }
+
+        const cfg = CATEGORY_CONFIG[meetup.category || 'Custom'];
+
+        const meetupIconHtml = `
+          <div style="
+            background: linear-gradient(135deg, #FF6B35 0%, #D84A1B 100%);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            border: 3px solid #FFFFFF;
+            box-shadow: 0 0 16px rgba(255, 107, 53, 0.6);
+            cursor: pointer;
+            position: relative;
+          " class="hover:scale-115 transition-transform animate-pulse">
+            🔥
+          </div>
+        `;
+
+        const meetupIcon = L.divIcon({
+          html: meetupIconHtml,
+          className: 'custom-meetup-pin',
+          iconSize: [38, 38],
+          iconAnchor: [19, 19],
+        });
+
+        const meetupMarker = L.marker([mLat, mLng], { icon: meetupIcon });
+
+        const meetupItem = {
+          id: meetup.id,
+          title: meetup.title,
+          subtitle: `🗓️ ${new Date(meetup.date_time).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · ${meetup.place}`,
+          category: meetup.category || 'Custom',
+          lat: mLat,
+          lng: mLng,
+          area: meetup.place,
+          isMeetup: true,
+          meetupData: meetup,
+        };
+
+        meetupMarker.on('click', () => {
+          setSelectedItem(meetupItem);
+          setPickedCoords({
+            lat: mLat,
+            lng: mLng,
+            address: meetup.place,
+          });
+          map.panTo([mLat, mLng], { animate: true });
+        });
+
+        meetupMarker.bindPopup(`
+          <div style="font-family: sans-serif; min-width: 180px; padding: 2px;">
+            <div style="font-size: 10px; font-weight: 800; color: #FF6B35; text-transform: uppercase;">
+              🔥 Live Meetup Gathering
+            </div>
+            <div style="font-size: 13px; font-weight: bold; color: #1C1917; margin-top: 2px;">
+              ${meetup.title}
+            </div>
+            <div style="font-size: 11px; color: #57534E; margin-top: 2px;">
+              📍 ${meetup.place}
+            </div>
+            <div style="font-size: 10px; color: #0F5257; font-weight: 700; margin-top: 4px;">
+              ${(meetup.rsvps_count || 1)} attending · Hosted by ${meetup.creator_name}
+            </div>
+          </div>
+        `);
+
+        meetupsGroup.addLayer(meetupMarker);
+      });
     }
-  }, [venues, activeLayer]);
+  }, [venues, meetups, activeLayer]);
 
   // Render People Layer (Live GPS Fuzzed Circles Only - No Fake Seed Data)
   useEffect(() => {
@@ -318,6 +444,8 @@ export default function InteractiveSuratMap() {
           subtitle: `Fuzzed ~${userFuzzedZone.accuracy_meters || 400}m for privacy`,
           category: 'Custom' as GroupCategory,
           area: 'Surat (Real GPS Differential Privacy)',
+          lat: userFuzzedZone.latitude,
+          lng: userFuzzedZone.longitude,
         });
       });
 
@@ -461,6 +589,79 @@ export default function InteractiveSuratMap() {
     }
   };
 
+  // Direct Host Meetup from Map Submit Handler
+  const handleHostMeetupSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pickedCoords) return;
+
+    const group = INITIAL_GROUPS.find((g) => g.id === hostGroupId) || INITIAL_GROUPS[0];
+    const creatorName =
+      (typeof window !== 'undefined' && localStorage.getItem('user_display_name')) ||
+      CURRENT_USER.display_name;
+
+    const newMeetup: Meetup = {
+      id: `m-map-${Date.now()}`,
+      title: hostTitle.trim() || 'Surat Community Meetup',
+      description: hostDescription.trim() || 'Gathering hosted directly from Surat Live Map.',
+      place: selectedItem?.title ? `${selectedItem.title} · ${pickedCoords.address.split(',')[0]}` : pickedCoords.address,
+      date_time: hostDateTime || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      group_id: hostGroupId,
+      group_name: group.name,
+      category: group.category,
+      capacity: Number(hostCapacity),
+      rsvps_count: 1,
+      ticket_price: Number(hostTicketPrice),
+      created_by: 'a0000000-0000-0000-0000-000000000001',
+      creator_name: creatorName,
+      created_at: new Date().toISOString(),
+    };
+
+    // Save to shared localStorage meetup store
+    const updatedMeetups = [newMeetup, ...meetups];
+    setMeetups(updatedMeetups);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cc_surat_meetups', JSON.stringify(updatedMeetups));
+    }
+
+    // Set map focus
+    setSelectedItem({
+      id: newMeetup.id,
+      title: newMeetup.title,
+      subtitle: `🗓️ ${new Date(newMeetup.date_time).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} · ${newMeetup.place}`,
+      category: newMeetup.category,
+      lat: pickedCoords.lat,
+      lng: pickedCoords.lng,
+      area: newMeetup.place,
+      isMeetup: true,
+      meetupData: newMeetup,
+    });
+
+    setShowHostModal(false);
+    setHostTitle('');
+    setHostDescription('');
+    setHostSuccessToast(`🎉 Meetup "${newMeetup.title}" is now LIVE on Surat Circles & Map!`);
+
+    setTimeout(() => {
+      setHostSuccessToast(null);
+    }, 4500);
+
+    if (tempPinLayerRef.current) {
+      tempPinLayerRef.current.clearLayers();
+    }
+  };
+
+  // Open Direct Host Modal for selected item / coords
+  const openDirectHostModal = () => {
+    if (!pickedCoords && selectedItem) {
+      setPickedCoords({
+        lat: selectedItem.lat || 21.1550,
+        lng: selectedItem.lng || 72.7800,
+        address: selectedItem.area || selectedItem.title || 'Surat, Gujarat',
+      });
+    }
+    setShowHostModal(true);
+  };
+
   // Delete user-added venue
   const handleDeleteVenue = (venueId: string) => {
     const updated = venues.filter((v) => v.id !== venueId);
@@ -489,16 +690,27 @@ export default function InteractiveSuratMap() {
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold font-heading">Surat Live Map</h1>
             <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-              {venues.length} Pinned Locations
+              {venues.length} Pinned Places
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent-foreground text-[10px] font-bold">
+              🔥 {meetups.length} Active Meetups
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Click anywhere on the map or search to pin real places in Surat.
+            Click anywhere on the map or any venue to <strong>directly host a meetup</strong> or pin a local spot.
           </p>
         </div>
 
-        {/* Real GPS Opt-In & Panic Actions */}
+        {/* Quick Action & Real GPS Opt-In */}
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={openDirectHostModal}
+            className="bg-accent hover:bg-accent/90 text-accent-foreground text-xs font-bold shadow-xs flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" /> Direct Host Meetup
+          </Button>
+
           {peopleOptIn ? (
             <div className="flex items-center gap-2">
               <div className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs flex items-center gap-2">
@@ -543,6 +755,21 @@ export default function InteractiveSuratMap() {
           )}
         </div>
       </div>
+
+      {/* Success Banner when meetup hosted from map */}
+      {hostSuccessToast && (
+        <div className="p-4 bg-success/15 border border-success/30 rounded-2xl text-xs text-success flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2 font-bold">
+            <Sparkles className="w-4 h-4 text-success shrink-0" />
+            <span>{hostSuccessToast}</span>
+          </div>
+          <Link href="/meetups">
+            <Button size="sm" variant="outline" className="text-xs h-7 border-success/40 text-success hover:bg-success/10 font-bold">
+              View in Meetups →
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {panicActivated && (
         <div className="p-4 bg-danger/15 border border-danger/30 rounded-2xl text-xs text-danger flex items-start justify-between gap-3 animate-in fade-in">
@@ -626,7 +853,7 @@ export default function InteractiveSuratMap() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            All Layers
+            All Circles ({venues.length + meetups.length})
           </button>
           <button
             onClick={() => setActiveLayer('events')}
@@ -636,7 +863,7 @@ export default function InteractiveSuratMap() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Pinned Places ({venues.length})
+            Places & Meetups
           </button>
           <button
             onClick={() => setActiveLayer('people')}
@@ -684,32 +911,56 @@ export default function InteractiveSuratMap() {
           </button>
         </div>
 
-        {/* Hint overlay if no venues are pinned yet */}
-        {venues.length === 0 && !selectedItem && (
-          <div className="absolute top-14 left-3 z-1000 bg-card/95 backdrop-blur-md border border-border rounded-xl px-3 py-2 text-xs text-muted-foreground shadow-md max-w-xs">
-            👉 <strong>Click anywhere on the map</strong> or search above to drop a pin and save a place in Surat.
-          </div>
-        )}
-
-        {/* Floating Selected Real Location Card at Bottom */}
+        {/* Floating Selected Real Location Card at Bottom with DIRECT HOSTING & GOOGLE MAPS DIRECTIONS */}
         {selectedItem && (
-          <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-md z-1000 bg-card/95 backdrop-blur-md border border-border rounded-2xl p-4 shadow-xl animate-in slide-in-from-bottom-2 duration-200">
+          <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:max-w-lg z-1000 bg-card/95 backdrop-blur-md border border-border rounded-2xl p-4 shadow-xl animate-in slide-in-from-bottom-2 duration-200">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <span
-                  className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-sm mb-1 inline-block"
-                  style={{
-                    backgroundColor: `${CATEGORY_CONFIG[selectedItem.category as GroupCategory]?.color || '#0F5257'}20`,
-                    color: CATEGORY_CONFIG[selectedItem.category as GroupCategory]?.color || '#0F5257',
-                  }}
-                >
-                  {selectedItem.category || 'Surat Real Place'}
-                </span>
-                <h4 className="font-bold text-sm text-foreground">{selectedItem.title}</h4>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-sm inline-block"
+                    style={{
+                      backgroundColor: selectedItem.isMeetup ? '#FF6B3520' : `${CATEGORY_CONFIG[selectedItem.category as GroupCategory]?.color || '#0F5257'}20`,
+                      color: selectedItem.isMeetup ? '#FF6B35' : CATEGORY_CONFIG[selectedItem.category as GroupCategory]?.color || '#0F5257',
+                    }}
+                  >
+                    {selectedItem.isMeetup ? '🔥 Live Meetup' : selectedItem.category || 'Surat Location'}
+                  </span>
+                  {selectedItem.isMeetup && (
+                    <span className="text-[10px] font-bold text-success bg-success/15 px-2 py-0.5 rounded-sm">
+                      {selectedItem.meetupData?.ticket_price === 0 ? 'FREE ENTRY' : `₹${selectedItem.meetupData?.ticket_price}`}
+                    </span>
+                  )}
+                </div>
+
+                <h4 className="font-bold text-sm text-foreground truncate">{selectedItem.title}</h4>
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedItem.subtitle || selectedItem.area}</p>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                {/* DIRECT HOST MEETUP AT THIS EXACT SPOT */}
+                <Button
+                  size="sm"
+                  onClick={openDirectHostModal}
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground text-xs font-bold h-8 px-3 shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Host Here
+                </Button>
+
+                {/* GET DIRECTIONS IN GOOGLE MAPS */}
+                {selectedItem.lat && selectedItem.lng && (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedItem.lat},${selectedItem.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Button size="sm" variant="outline" className="text-xs font-semibold h-8 px-2.5" title="Get Directions">
+                      <Navigation className="w-3.5 h-3.5 mr-1 text-primary" /> Directions
+                    </Button>
+                  </a>
+                )}
+
                 {selectedItem.isUserAdded ? (
                   <Button
                     size="sm"
@@ -720,32 +971,155 @@ export default function InteractiveSuratMap() {
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
-                ) : (
+                ) : !selectedItem.isMeetup ? (
                   <Button
                     size="sm"
+                    variant="outline"
                     onClick={() => setShowAddModal(true)}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold h-8"
+                    className="text-xs font-semibold h-8"
                   >
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Save Pin
+                    Save Pin
                   </Button>
+                ) : (
+                  <Link href="/meetups">
+                    <Button size="sm" variant="outline" className="text-xs font-semibold h-8">
+                      View RSVPS
+                    </Button>
+                  </Link>
                 )}
-                <Link href="/meetups">
-                  <Button size="sm" variant="outline" className="text-xs font-semibold h-8">
-                    Host Meetup
-                  </Button>
-                </Link>
               </div>
             </div>
 
             <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1 truncate">
-                <MapPin className="w-3.5 h-3.5 text-primary shrink-0" /> {selectedItem.area}
+                <MapPin className="w-3.5 h-3.5 text-primary shrink-0" /> {selectedItem.area || 'Surat, Gujarat'}
               </span>
-              <span className="text-foreground font-semibold shrink-0">Surat</span>
+              <span className="text-foreground font-semibold shrink-0">
+                {selectedItem.lat ? `${selectedItem.lat.toFixed(4)}°, ${selectedItem.lng?.toFixed(4)}°` : 'Surat'}
+              </span>
             </div>
           </div>
         )}
       </div>
+
+      {/* DIRECT HOST MEETUP MODAL FROM MAP */}
+      {showHostModal && (
+        <div className="fixed inset-0 z-2000 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card text-card-foreground border border-border rounded-3xl p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <h3 className="font-bold text-lg font-heading flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-accent" /> Host Meetup Directly from Map
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Location pinned to: <strong>{pickedCoords?.address.split(',')[0] || selectedItem?.title || 'Surat'}</strong>
+                </p>
+              </div>
+              <button onClick={() => setShowHostModal(false)} className="p-1 rounded-md text-muted-foreground hover:bg-muted">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleHostMeetupSubmit} className="space-y-4 text-xs sm:text-sm">
+              <div>
+                <label className="block font-semibold mb-1">Meetup Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={hostTitle}
+                  onChange={(e) => setHostTitle(e.target.value)}
+                  placeholder="e.g. Surat Sunset Tech Mixer, Dumas Morning Cycling"
+                  className="w-full px-3.5 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Circle / Category *</label>
+                <select
+                  value={hostGroupId}
+                  onChange={(e) => setHostGroupId(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+                >
+                  {INITIAL_GROUPS.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name} ({g.category})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                  <MapPin className="w-3.5 h-3.5" /> Pinned Map Spot
+                </div>
+                <div className="text-xs text-foreground font-semibold truncate">
+                  {selectedItem?.title || 'Selected Map Coordinates'}
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  {pickedCoords ? `${pickedCoords.address} (${pickedCoords.lat.toFixed(4)}°, ${pickedCoords.lng.toFixed(4)}°)` : 'Surat Coordinates'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1">Date & Time *</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={hostDateTime}
+                    onChange={(e) => setHostDateTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-input bg-background text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Capacity</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={100}
+                    value={hostCapacity}
+                    onChange={(e) => setHostCapacity(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl border border-input bg-background text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">Entry Price (₹0 for Free)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={50}
+                  value={hostTicketPrice}
+                  onChange={(e) => setHostTicketPrice(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl border border-input bg-background text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">What to expect / Description *</label>
+                <textarea
+                  required
+                  rows={2}
+                  value={hostDescription}
+                  onChange={(e) => setHostDescription(e.target.value)}
+                  placeholder="Meetup agenda, meetup spot details, or guidelines..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="outline" className="flex-1 text-xs" onClick={() => setShowHostModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 bg-accent text-accent-foreground text-xs font-bold shadow-md">
+                  🚀 Launch Meetup on Map
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Pin Location Modal */}
       {showAddModal && pickedCoords && (

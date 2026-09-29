@@ -20,6 +20,14 @@ import { CATEGORY_CONFIG } from '@/lib/category-helpers';
 
 export default function DashboardPage() {
   const sponsor = INITIAL_SPONSOR_BANNERS[0];
+  const [userName, setUserName] = React.useState(CURRENT_USER.display_name);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('user_display_name');
+      if (stored) setUserName(stored);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -34,7 +42,7 @@ export default function DashboardPage() {
               <span className="text-xs text-muted-foreground">· Verified Resident</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-foreground">
-              Welcome back, {CURRENT_USER.display_name}!
+              Welcome back, {userName}!
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground max-w-xl">
               You are part of the first 300 founding members in Surat. Explore live meetups, chat with local creators, and share your rough location.
