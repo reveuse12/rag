@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
 import { GroupCategory, Meetup } from '@/types';
 import { INITIAL_GROUPS, INITIAL_MEETUPS, CURRENT_USER } from '@/lib/data';
+import { useCity } from '@/context/city-context';
 
 export interface MapVenue {
   id: string;
@@ -49,12 +50,24 @@ export interface MapVenue {
 }
 
 export default function InteractiveSuratMap() {
+  const { currentCity } = useCity();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const placesLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const peopleLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const tempPinLayerRef = useRef<L.LayerGroup | null>(null);
   const meetupsLayerGroupRef = useRef<L.LayerGroup | null>(null);
+
+  // Fly to active city coordinates when city changes
+  useEffect(() => {
+    if (mapInstanceRef.current && currentCity) {
+      mapInstanceRef.current.flyTo(
+        [currentCity.latitude, currentCity.longitude],
+        currentCity.zoom || 12,
+        { duration: 1.5 }
+      );
+    }
+  }, [currentCity]);
 
   // Dynamic venues state (loaded from user map interactions / localStorage)
   const [venues, setVenues] = useState<MapVenue[]>([]);

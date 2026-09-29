@@ -95,6 +95,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+import { CityProvider } from "@/context/city-context";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -107,7 +109,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="alternate" type="text/markdown" title="AI Knowledge Graph (llms.txt)" href="/llms.txt" />
         <StructuredData />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <CityProvider>
+          {children}
+        </CityProvider>
+      </body>
     </html>
   );
 }
+

@@ -17,6 +17,8 @@ import {
   Flame,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CitySwitcher } from '@/components/city-switcher';
+import { useCity } from '@/context/city-context';
 
 interface NavProps {
   user?: {
@@ -32,6 +34,7 @@ export function AppNavigation({ user }: NavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [currentUser, setCurrentUser] = React.useState(user);
+  const { detectionMessage, clearDetectionMessage } = useCity();
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -72,25 +75,34 @@ export function AppNavigation({ user }: NavProps) {
 
   return (
     <>
+      {/* Geolocation Nearest Metro Hub Toast */}
+      {detectionMessage && (
+        <div className="bg-primary text-primary-foreground py-1.5 px-4 text-xs font-semibold text-center flex items-center justify-center gap-2 animate-in slide-in-from-top-2">
+          <span>{detectionMessage}</span>
+          <button
+            onClick={clearDetectionMessage}
+            className="text-primary-foreground/80 hover:text-primary-foreground underline text-[10px] ml-2"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
       <header className="sticky top-0 z-40 bg-card/85 backdrop-blur-md border-b border-border transition-colors">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-15 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <Link href="/groups" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-sm shadow-primary/20 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-base sm:text-lg shadow-sm shadow-primary/20 group-hover:scale-105 transition-transform">
                 C
               </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-lg tracking-tight text-foreground font-heading">
-                    CityCircle
-                  </span>
-                  <span className="px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider bg-accent/20 text-accent-foreground rounded-sm border border-accent/30">
-                    Surat
-                  </span>
-                </div>
-              </div>
+              <span className="font-extrabold text-base sm:text-lg tracking-tight text-foreground font-heading">
+                CityCircle
+              </span>
             </Link>
+
+            {/* City Switcher */}
+            <CitySwitcher />
           </div>
 
           {/* Desktop Nav Links */}

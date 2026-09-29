@@ -27,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { SocialTrend, TrendCategory, TrendPlatform } from '@/types';
 import { INITIAL_SURAT_TRENDS, INITIAL_SPONSOR_BANNERS } from '@/lib/data';
+import { useCity } from '@/context/city-context';
 
 const TREND_CATEGORIES: { label: string; value: string; emoji: string }[] = [
   { label: 'All Topics', value: 'all', emoji: '🌟' },
@@ -38,6 +39,7 @@ const TREND_CATEGORIES: { label: string; value: string; emoji: string }[] = [
 ];
 
 export default function TrendsPage() {
+  const { currentCity } = useCity();
   const [trends, setTrends] = useState<SocialTrend[]>(INITIAL_SURAT_TRENDS);
   const [loading, setLoading] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'instagram' | 'reddit' | 'bookmarked'>('all');
@@ -59,7 +61,7 @@ export default function TrendsPage() {
   const [submitNeighborhood, setSubmitNeighborhood] = useState('');
   const [submitContent, setSubmitContent] = useState('');
 
-  // Load from localStorage & fetch live /api/trends
+  // Load from localStorage & fetch live /api/trends for active city
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedLikes = localStorage.getItem('cc_trend_likes');
@@ -80,14 +82,13 @@ export default function TrendsPage() {
       }
     }
 
-    // Fetch dynamic trends
-    fetchLiveTrends();
-  }, []);
+    fetchLiveTrends(currentCity.slug);
+  }, [currentCity.slug]);
 
-  const fetchLiveTrends = async () => {
+  const fetchLiveTrends = async (citySlug: string = currentCity.slug) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/trends');
+      const res = await fetch(`/api/trends?city=${citySlug}`);
       if (res.ok) {
         const data = await res.json();
         if (data.trends && Array.isArray(data.trends)) {
@@ -133,7 +134,7 @@ export default function TrendsPage() {
   };
 
   const handleShareToWhatsApp = (trend: SocialTrend) => {
-    const text = `🔥 Check out this trending Surat post on CityCircle: "${trend.title}"\n\nRead more: ${trend.source_url}`;
+    const text = `🔥 Check out this trending ${currentCity.name} post on CityCircle: "${trend.title}"\n\nRead more: ${trend.source_url}`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
@@ -145,22 +146,22 @@ export default function TrendsPage() {
       platform: submitPlatform,
       title: submitTitle,
       content: submitContent,
-      author_name: submitPlatform === 'instagram' ? 'Surat Resident' : 'u/surat_citizen',
-      author_handle: submitPlatform === 'instagram' ? '@surat_creator' : 'u/surat_citizen',
+      author_name: submitPlatform === 'instagram' ? `${currentCity.name} Resident` : 'u/local_citizen',
+      author_handle: submitPlatform === 'instagram' ? `@${currentCity.slug}_creator` : 'u/local_citizen',
       author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-      source_url: submitUrl || 'https://instagram.com/surat',
-      subreddit: submitPlatform === 'reddit' ? 'r/surat' : undefined,
+      source_url: submitUrl || `https://reddit.com/${currentCity.subreddits[0] || 'r/all'}`,
+      subreddit: submitPlatform === 'reddit' ? currentCity.subreddits[0] || 'r/all' : undefined,
       category: submitCategory,
       likes_count: 1,
       comments_count: 0,
       posted_at: 'Just now by you',
-      neighborhood: submitNeighborhood || 'Surat City',
+      neighborhood: submitNeighborhood || `${currentCity.name} Metro`,
       is_verified_creator: true,
     };
 
     setTrends([newTrend, ...trends]);
     setShowSubmitModal(false);
-    setToastMsg('🎉 Trend submitted to Surat Local Pulse!');
+    setToastMsg(`🎉 Trend submitted to ${currentCity.name} Local Pulse!`);
     setTimeout(() => setToastMsg(null), 4000);
 
     // Reset
@@ -218,20 +219,23 @@ export default function TrendsPage() {
                 📸 Instagram Reels
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-600 text-white text-[10px] font-black uppercase tracking-wider shadow-xs">
-                💬 Reddit r/surat
+                💬 {currentCity.subreddits[0] || 'Reddit'}
+              </span>
+              <span className="text-xs font-bold text-muted-foreground ml-1">
+                {currentCity.flag} {currentCity.name}, {currentCity.country}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-foreground flex items-center gap-2">
-              Surat Social Pulse & Trends <Flame className="w-6 h-6 text-orange-500 animate-pulse" />
+              {currentCity.name} Social Pulse & Trends <Flame className="w-6 h-6 text-orange-500 animate-pulse" />
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground max-w-xl">
-              Curated viral reels, hidden cafe discoveries, civic debates, and top Reddit discussions from across Surat neighborhoods.
+              Curated viral reels, hidden cafe discoveries, civic debates, and top Reddit discussions from across {currentCity.name} neighborhoods.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <Button
-              onClick={fetchLiveTrends}
+              onClick={() => fetchLiveTrends(currentCity.slug)}
               variant="outline"
               disabled={loading}
               className="text-xs h-9 border-border bg-card hover:bg-muted"
