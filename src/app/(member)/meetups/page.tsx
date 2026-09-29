@@ -256,11 +256,11 @@ export default function MeetupsPage() {
           const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
             meetup.title
           )}&dates=${startISO}/${endISO}&details=${encodeURIComponent(
-            meetup.description + '\n\nOrganized on CityCircle Surat: https://citycircle-surat.vercel.app'
+            meetup.description + '\n\nOrganized on CityCircle: https://citycircle-app.vercel.app'
           )}&location=${encodeURIComponent(meetup.place + ', Surat, Gujarat')}`;
 
           const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
-            `🔥 Hey! Check out this meetup in Surat:\n*${meetup.title}*\n📍 ${meetup.place}\n🗓️ ${meetupDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} at ${meetupDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}\n\nRSVP with me here: https://citycircle-surat.vercel.app/meetups`
+            `🔥 Hey! Check out this meetup in Surat:\n*${meetup.title}*\n📍 ${meetup.place}\n🗓️ ${meetupDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} at ${meetupDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}\n\nRSVP with me here: https://citycircle-app.vercel.app/meetups`
           )}`;
 
           const gMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(

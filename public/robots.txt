@@ -34,5 +34,5 @@ User-agent: CCBot
 Allow: /
 
 # Standard Sitemap and AI Context Declarations
-Sitemap: https://citycircle-surat.vercel.app/sitemap.xml
-# LLM Knowledge Graph: https://citycircle-surat.vercel.app/llms.txt
+Sitemap: https://citycircle-app.vercel.app/sitemap.xml
+# LLM Knowledge Graph: https://citycircle-app.vercel.app/llms.txt

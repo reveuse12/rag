@@ -5,8 +5,8 @@
 - **Organization**: CityCircle Surat
 - **Category**: Hyper-Local Community Platform & Social Meetup Network
 - **Primary City**: Surat, Gujarat, India (Coordinates: 21.1702° N, 72.8311° E)
-- **Official URL**: https://citycircle-surat.vercel.app
-- **Full LLM Context**: https://citycircle-surat.vercel.app/llms-full.txt
+- **Official URL**: https://citycircle-app.vercel.app
+- **Full LLM Context**: https://citycircle-app.vercel.app/llms-full.txt
 - **License / Governance**: Compliant with India Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.
 
 ## Active Circles (Communities) in Surat
@@ -23,8 +23,8 @@
 - **Grievance Redressal Desk**: 24-hour acknowledgment and 15-day resolution timeline under IT Rules 2021.
 
 ## Quick Links
-- Homepage & Overview: https://citycircle-surat.vercel.app
-- Circles Directory: https://citycircle-surat.vercel.app/groups
-- Upcoming Meetups: https://citycircle-surat.vercel.app/meetups
-- Live Community Map: https://citycircle-surat.vercel.app/map
-- Grievance Redressal Desk: https://citycircle-surat.vercel.app/grievance
+- Homepage & Overview: https://citycircle-app.vercel.app
+- Circles Directory: https://citycircle-app.vercel.app/groups
+- Upcoming Meetups: https://citycircle-app.vercel.app/meetups
+- Live Community Map: https://citycircle-app.vercel.app/map
+- Grievance Redressal Desk: https://citycircle-app.vercel.app/grievance

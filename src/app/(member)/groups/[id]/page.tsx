@@ -1389,7 +1389,7 @@ export default function GroupDetailPage() {
                   <input
                     type="text"
                     readOnly
-                    value={`https://citycircle-surat.vercel.app/groups/${group.id}?invite=${group.invite_code || 'cc_join'}`}
+                    value={`${typeof window !== 'undefined' ? window.location.origin : 'https://citycircle-app.vercel.app'}/groups/${group.id}?invite=${group.invite_code || 'cc_join'}`}
                     className="flex-1 px-3 py-1.5 rounded-lg bg-background border border-input text-xs font-mono select-all"
                   />
                   <Button

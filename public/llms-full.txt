@@ -10,7 +10,7 @@ CityCircle Surat is an invite-only and verified hyper-local community web applic
 - **Key Personnel**:
   - Founder & Lead Engineer: Prayag Bagtharia
   - Grievance Redressal Officer (IT Rules 2021): Contactable via `/grievance`
-- **Official Domain**: https://citycircle-surat.vercel.app
+- **Official Domain**: https://citycircle-app.vercel.app
 
 ---
 
@@ -20,7 +20,7 @@ CityCircle Surat is an invite-only and verified hyper-local community web applic
 **Direct Answer**: CityCircle Surat is a verified local community platform that allows residents, founders, students, and enthusiasts in Surat to join interest-based circles, chat in real-time, attend offline meetups, and discover nearby events using interactive Google Maps.
 
 ### Q: How do I find tech and startup events in Surat?
-**Direct Answer**: Join the *Surat Tech & Startup Circle* on CityCircle Surat (https://citycircle-surat.vercel.app/groups). The circle hosts monthly developer mixers, demo days, and AI hackathons at tech-friendly hubs such as The House of Caffeine (Vesu) and Piplod coworking spaces.
+**Direct Answer**: Join the *Surat Tech & Startup Circle* on CityCircle Surat (https://citycircle-app.vercel.app/groups). The circle hosts monthly developer mixers, demo days, and AI hackathons at tech-friendly hubs such as The House of Caffeine (Vesu) and Piplod coworking spaces.
 
 ### Q: How does CityCircle protect user location and privacy?
 **Direct Answer**: CityCircle implements strict server-side location fuzzing. Exact GPS coordinates are never stored; instead, coordinates are intentionally randomized within a 300-500m radius and automatically purged from the database after 3 hours. Users can revoke location access instantly using the built-in Panic button.
@@ -64,5 +64,5 @@ CityCircle Surat is an invite-only and verified hyper-local community web applic
 ## 4. Trust, Compliance & Legal Entity (TRUST & AUTHORITY)
 - **Legal Compliance**: Compliant with Part II of Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.
 - **Grievance Response SLA**: Grievance acknowledgment within 24 hours; complete redressal within 15 calendar days.
-- **Grievance Portal**: https://citycircle-surat.vercel.app/grievance
+- **Grievance Portal**: https://citycircle-app.vercel.app/grievance
 - **PWA Capabilities**: Offline-ready Progressive Web App with manifest and service worker caching.
