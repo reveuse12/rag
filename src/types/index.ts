@@ -144,3 +144,35 @@ export interface MediaUpload {
   uploaded_by: string;
   created_at: string;
 }
+
+export type TrendPlatform = 'reddit' | 'instagram';
+export type TrendCategory =
+  | 'Food & Cafes'
+  | 'Tech & Startups'
+  | 'Events & Nightlife'
+  | 'Civic & Infrastructure'
+  | 'Culture & Gems';
+
+export interface SocialTrend {
+  id: string;
+  platform: TrendPlatform;
+  title: string;
+  content?: string;
+  author_name: string;
+  author_handle: string;
+  author_avatar: string;
+  source_url: string;
+  image_url?: string;
+  video_url?: string;
+  subreddit?: string; // e.g. "r/surat", "r/gujarat"
+  hashtags?: string[];
+  category: TrendCategory;
+  likes_count: number;
+  comments_count: number;
+  upvotes_count?: number;
+  posted_at: string;
+  is_verified_creator?: boolean;
+  neighborhood?: string; // e.g. "Vesu", "Piplod", "Adajan", "Dumas Road"
+  aspect_ratio?: 'square' | 'portrait' | 'landscape';
+}
+

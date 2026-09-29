@@ -24,6 +24,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/trends`,
+      lastModified: now,
+      changeFrequency: 'hourly',
+      priority: 0.95,
+    },
+    {
       url: `${baseUrl}/map`,
       lastModified: now,
       changeFrequency: 'daily',

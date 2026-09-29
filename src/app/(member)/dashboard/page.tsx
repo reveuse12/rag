@@ -13,9 +13,12 @@ import {
   Plus,
   Compass,
   MessageSquare,
+  Flame,
+  Heart,
+  ArrowUpRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { INITIAL_GROUPS, INITIAL_MEETUPS, INITIAL_SPONSOR_BANNERS, CURRENT_USER } from '@/lib/data';
+import { INITIAL_GROUPS, INITIAL_MEETUPS, INITIAL_SPONSOR_BANNERS, INITIAL_SURAT_TRENDS, CURRENT_USER } from '@/lib/data';
 import { CATEGORY_CONFIG } from '@/lib/category-helpers';
 
 export default function DashboardPage() {
@@ -55,9 +58,10 @@ export default function DashboardPage() {
                 Explore Circles
               </Button>
             </Link>
-            <Link href="/meetups">
-              <Button variant="outline" className="text-xs sm:text-sm h-10 font-semibold border-border">
-                Meetups
+            <Link href="/trends">
+              <Button variant="outline" className="text-xs sm:text-sm h-10 font-semibold border-border flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-orange-500" />
+                Local Trends
               </Button>
             </Link>
           </div>
@@ -65,7 +69,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Navigation Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
         <Link
           href="/groups"
           className="p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-xs transition-all group"
@@ -74,7 +78,7 @@ export default function DashboardPage() {
             <Users className="w-5 h-5" />
           </div>
           <div className="font-bold text-sm text-foreground mb-0.5">Circles</div>
-          <div className="text-[11px] text-muted-foreground">5 Categories in Surat</div>
+          <div className="text-[11px] text-muted-foreground">5 Categories</div>
         </Link>
 
         <Link
@@ -85,7 +89,20 @@ export default function DashboardPage() {
             <Calendar className="w-5 h-5 text-accent" />
           </div>
           <div className="font-bold text-sm text-foreground mb-0.5">Meetups</div>
-          <div className="text-[11px] text-muted-foreground">Offline Gatherings</div>
+          <div className="text-[11px] text-muted-foreground">Gatherings</div>
+        </Link>
+
+        <Link
+          href="/trends"
+          className="p-4 rounded-2xl bg-card border border-border hover:border-orange-500/50 hover:shadow-xs transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <Flame className="w-5 h-5" />
+          </div>
+          <div className="font-bold text-sm text-foreground mb-0.5 flex items-center gap-1">
+            Trends <span className="text-[9px] bg-rose-500/20 text-rose-600 px-1 py-0.2 rounded font-extrabold">NEW</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground">Instagram & Reddit</div>
         </Link>
 
         <Link
@@ -96,18 +113,18 @@ export default function DashboardPage() {
             <MapPin className="w-5 h-5" />
           </div>
           <div className="font-bold text-sm text-foreground mb-0.5">Live Map</div>
-          <div className="text-[11px] text-muted-foreground">Places & Fuzzed Zones</div>
+          <div className="text-[11px] text-muted-foreground">Fuzzed Zones</div>
         </Link>
 
         <Link
           href="/profile"
-          className="p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-xs transition-all group"
+          className="p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-xs transition-all group col-span-2 sm:col-span-1"
         >
           <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div className="font-bold text-sm text-foreground mb-0.5">Profile</div>
-          <div className="text-[11px] text-muted-foreground">Verified Settings</div>
+          <div className="text-[11px] text-muted-foreground">Verified ID</div>
         </Link>
       </div>
 
@@ -230,6 +247,81 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Surat Social Pulse & Trends (Instagram & Reddit) */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold font-heading flex items-center gap-2">
+              Surat Social Pulse <Flame className="w-5 h-5 text-orange-500" />
+            </h2>
+            <span className="hidden sm:inline-block text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-linear-to-r from-pink-500/10 via-purple-500/10 to-orange-500/10 text-primary border border-border">
+              Instagram Reels & Reddit r/surat
+            </span>
+          </div>
+          <Link href="/trends" className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+            Explore All Trends <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {INITIAL_SURAT_TRENDS.slice(0, 3).map((trend) => {
+            const isInstagram = trend.platform === 'instagram';
+            return (
+              <div
+                key={trend.id}
+                className="p-4 rounded-3xl bg-card border border-border hover:border-primary/40 hover:shadow-xs transition-all flex flex-col justify-between group"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold text-white shadow-2xs ${
+                        isInstagram
+                          ? 'bg-linear-to-r from-purple-600 via-pink-600 to-rose-500'
+                          : 'bg-orange-600'
+                      }`}
+                    >
+                      {isInstagram ? '📸 Instagram' : '💬 ' + (trend.subreddit || 'r/surat')}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{trend.posted_at}</span>
+                  </div>
+
+                  <h4 className="font-bold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                    {trend.title}
+                  </h4>
+
+                  {trend.content && (
+                    <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                      {trend.content}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold">
+                    <Heart className="w-3 h-3 text-rose-500" />
+                    <span>{trend.upvotes_count || trend.likes_count}</span>
+                    <span className="text-muted-foreground/60">·</span>
+                    <MessageSquare className="w-3 h-3" />
+                    <span>{trend.comments_count}</span>
+                  </div>
+
+                  <a
+                    href={trend.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                  >
+                    <span>Read</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
+

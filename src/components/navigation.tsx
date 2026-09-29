@@ -14,6 +14,7 @@ import {
   LogOut,
   SlidersHorizontal,
   Bell,
+  Flame,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -64,6 +65,7 @@ export function AppNavigation({ user }: NavProps) {
   const navItems = [
     { label: 'Groups', href: '/groups', icon: Users },
     { label: 'Meetups', href: '/meetups', icon: Calendar },
+    { label: 'Trends', href: '/trends', icon: Flame },
     { label: 'Live Map', href: '/map', icon: MapPin },
     { label: 'Profile', href: '/profile', icon: User },
   ];
@@ -182,7 +184,7 @@ export function AppNavigation({ user }: NavProps) {
 
       {/* Mobile Bottom Navigation Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t border-border pb-safe">
-        <div className="grid grid-cols-4 h-14">
+        <div className="grid grid-cols-5 h-14">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
