@@ -67,10 +67,22 @@ export default function ProfileSetupPage() {
         throw new Error(data.error || 'Failed to complete profile');
       }
 
-      localStorage.removeItem('auth_token');
+      const emailLower = email.trim().toLowerCase();
+      const isAdmin = emailLower === 'prayag129787@gmail.com' || emailLower === 'prayagbagtharia@gmail.com';
+      const role = isAdmin ? 'admin' : 'member';
+
+      // Set cookies for Edge Middleware
+      document.cookie = `auth_token=session_${data.user_id || Date.now()}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `user_email=${emailLower}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
+
+      localStorage.setItem('user_email', emailLower);
+      localStorage.setItem('user_id', data.user_id || '');
+      localStorage.setItem('user_display_name', displayName.trim());
+      localStorage.setItem('user_role', role);
       localStorage.removeItem('founding_code');
 
-      router.push('/groups');
+      window.location.href = '/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete profile');
     } finally {

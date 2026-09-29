@@ -18,10 +18,11 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { INITIAL_REPORTS, INITIAL_SPONSOR_BANNERS, CURRENT_USER } from '@/lib/data';
+import { INITIAL_REPORTS, INITIAL_SPONSOR_BANNERS } from '@/lib/data';
 import { Report, SponsorBanner } from '@/types';
 
 export default function AdminDashboardPage() {
+  const [isAdminAuthorized, setIsAdminAuthorized] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<'moderation' | 'founding' | 'sponsors' | 'metrics'>('moderation');
   const [reports, setReports] = useState<Report[]>(INITIAL_REPORTS);
   const [banners, setBanners] = useState<SponsorBanner[]>(INITIAL_SPONSOR_BANNERS);
@@ -42,6 +43,26 @@ export default function AdminDashboardPage() {
   const [bannerDesc, setBannerDesc] = useState('');
   const [bannerImg, setBannerImg] = useState('');
   const [bannerLink, setBannerLink] = useState('');
+
+  // Strict Admin authorization check
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase();
+      const storedRole = (localStorage.getItem('user_role') || '').toLowerCase();
+      const hasAuthCookie = document.cookie.includes('auth_token') || document.cookie.includes('user_email');
+      const hasAuthLocal = localStorage.getItem('auth_token') || localStorage.getItem('user_email');
+
+      const isSuperAdmin =
+        (storedEmail === 'prayag129787@gmail.com' || storedEmail === 'prayagbagtharia@gmail.com' || storedRole === 'admin') &&
+        Boolean(hasAuthCookie || hasAuthLocal);
+
+      if (!isSuperAdmin) {
+        setIsAdminAuthorized(false);
+      } else {
+        setIsAdminAuthorized(true);
+      }
+    }
+  }, []);
 
   // Hydrate admin data from storage
   React.useEffect(() => {
@@ -74,6 +95,7 @@ export default function AdminDashboardPage() {
   }, []);
 
   const handleResolveReport = (reportId: string, action: 'dismiss' | 'ban' | 'remove') => {
+    const adminName = (typeof window !== 'undefined' && localStorage.getItem('user_display_name')) || 'Super Admin';
     setReports((prev) => {
       const updated = prev.map((r) =>
         r.id === reportId
@@ -81,7 +103,7 @@ export default function AdminDashboardPage() {
               ...r,
               status: 'resolved' as const,
               reviewed_at: new Date().toISOString(),
-              reviewed_by: CURRENT_USER.display_name,
+              reviewed_by: adminName,
             }
           : r
       );
@@ -129,13 +151,52 @@ export default function AdminDashboardPage() {
     setBannerDesc('');
   };
 
+  if (isAdminAuthorized === null) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-muted-foreground font-medium">Verifying Super Admin Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAdminAuthorized === false) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6">
+        <div className="max-w-md w-full bg-card border border-border rounded-3xl p-8 text-center space-y-4 shadow-lg">
+          <div className="w-14 h-14 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-7 h-7" />
+          </div>
+          <h1 className="text-xl font-black font-heading text-foreground">Access Restricted</h1>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            This portal is strictly restricted to verified CityCircle Super Administrators. You do not have permission to view or manage platform moderation controls.
+          </p>
+          <div className="pt-2 flex flex-col gap-2 sm:flex-row">
+            <Link href="/auth/login" className="flex-1">
+              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold h-10">
+                Sign In as Admin
+              </Button>
+            </Link>
+            <Link href="/" className="flex-1">
+              <Button variant="outline" className="w-full text-xs font-semibold h-10">
+                Return Home
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card border border-border rounded-3xl p-6 shadow-xs">
           <div className="flex items-center gap-3">
-            <Link href="/groups" className="p-2 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground">
+            <Link href="/dashboard" className="p-2 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>

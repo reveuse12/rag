@@ -300,11 +300,16 @@ export default function ProfilePage() {
   };
 
   const handleSignOut = () => {
-    document.cookie = 'auth_token=; path=/; max-age=0';
-    document.cookie = 'user_email=; path=/; max-age=0';
+    document.cookie = 'auth_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'user_email=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'user_role=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     localStorage.removeItem('user_email');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_display_name');
+    localStorage.removeItem('user_avatar');
+    localStorage.removeItem('user_role');
     localStorage.removeItem('auth_token');
-    router.push('/');
+    window.location.href = '/';
   };
 
   const joinedGroups = allGroups.filter((g) => joinedGroupIds.includes(g.id));

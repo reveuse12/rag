@@ -22,6 +22,7 @@ import { useCity } from '@/context/city-context';
 
 interface NavProps {
   user?: {
+    email?: string;
     display_name?: string;
     avatar_url?: string;
     is_verified?: boolean;
@@ -39,31 +40,50 @@ export function AppNavigation({ user }: NavProps) {
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedName = localStorage.getItem('user_display_name');
+      const storedEmail = localStorage.getItem('user_email');
+      const storedRole = localStorage.getItem('user_role');
       const storedAvatar = localStorage.getItem('user_avatar');
-      if (storedName) {
+
+      if (storedEmail || storedName) {
+        const emailLower = (storedEmail || user?.email || '').toLowerCase();
+        const isAdmin = emailLower === 'prayag129787@gmail.com' || emailLower === 'prayagbagtharia@gmail.com' || storedRole === 'admin';
+
         setCurrentUser({
-          display_name: storedName,
+          email: storedEmail || user?.email,
+          display_name: storedName || user?.display_name || 'Member',
           avatar_url: storedAvatar || user?.avatar_url,
           is_verified: true,
           is_founding_member: true,
-          role: 'member',
+          role: isAdmin ? 'admin' : (storedRole || user?.role || 'member'),
         });
       } else if (user) {
         setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
       }
     }
   }, [user]);
 
   const handleSignOut = () => {
-    document.cookie = 'auth_token=; path=/; max-age=0';
-    document.cookie = 'user_email=; path=/; max-age=0';
+    document.cookie = 'auth_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'user_email=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'user_role=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_display_name');
     localStorage.removeItem('user_avatar');
+    localStorage.removeItem('user_role');
     localStorage.removeItem('auth_token');
-    router.push('/');
+    setCurrentUser(null);
+    window.location.href = '/';
   };
+
+  const isUserAdmin =
+    currentUser?.role === 'admin' ||
+    Boolean(
+      currentUser?.email &&
+      ['prayag129787@gmail.com', 'prayagbagtharia@gmail.com'].includes(currentUser.email.toLowerCase())
+    );
 
   const navItems = [
     { label: 'Groups', href: '/groups', icon: Users },
@@ -125,17 +145,19 @@ export function AppNavigation({ user }: NavProps) {
                 </Link>
               );
             })}
-            <Link
-              href="/admin"
-              className={`flex items-center gap-1.5 px-3 py-1.5 ml-2 text-xs font-medium rounded-lg border border-border ${
-                pathname?.startsWith('/admin')
-                  ? 'bg-primary/10 text-primary border-primary/30 font-semibold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Admin
-            </Link>
+            {isUserAdmin && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-1.5 px-3 py-1.5 ml-2 text-xs font-medium rounded-lg border border-border ${
+                  pathname?.startsWith('/admin')
+                    ? 'bg-primary/10 text-primary border-primary/30 font-semibold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Admin
+              </Link>
+            )}
           </nav>
 
           {/* User Status / Action bar */}

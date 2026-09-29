@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Loader2, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
 
-export default function VerifyLoginPage() {
+function VerifyLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
+
   const [email, setEmail] = useState('');
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -56,13 +59,21 @@ export default function VerifyLoginPage() {
         throw new Error(data.error || 'Failed to verify OTP');
       }
 
-      // Store token and clear localStorage
+      // Store token and clear temporary login_email
       localStorage.removeItem('login_email');
-      document.cookie = `auth_token=${data.token}; path=/; max-age=3600`;
-      document.cookie = `user_email=${data.email}; path=/; max-age=3600`;
+      const emailLower = data.email?.toLowerCase() || '';
+      const isAdmin = emailLower === 'prayag129787@gmail.com' || emailLower === 'prayagbagtharia@gmail.com';
+      const role = isAdmin ? 'admin' : 'member';
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `user_email=${data.email}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
+
+      localStorage.setItem('user_email', data.email);
+      localStorage.setItem('user_role', role);
+
+      // Redirect to destination
+      window.location.href = redirectUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify OTP');
       // Clear inputs and refocus first
@@ -253,3 +264,12 @@ export default function VerifyLoginPage() {
     </div>
   );
 }
+
+export default function VerifyLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground text-sm">Loading verification...</div>}>
+      <VerifyLoginForm />
+    </Suspense>
+  );
+}
+

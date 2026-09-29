@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ShieldCheck, Mail, Lock, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
+
   const [authMode, setAuthMode] = useState<'password' | 'otp'>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,13 +35,25 @@ export default function LoginPage() {
         throw new Error(data.error || 'Invalid email or password');
       }
 
+      const emailLower = data.user.email?.toLowerCase() || '';
+      const isAdmin = emailLower === 'prayag129787@gmail.com' || emailLower === 'prayagbagtharia@gmail.com' || data.user.role === 'admin';
+      const role = isAdmin ? 'admin' : 'member';
+
+      // Set cookies for Edge Middleware
+      document.cookie = `auth_token=session_${data.user.id}_${Date.now()}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `user_email=${data.user.email}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
+
+      // Set localStorage for fast client hydration
       localStorage.setItem('user_email', data.user.email);
       localStorage.setItem('user_id', data.user.id);
       localStorage.setItem('user_display_name', data.user.display_name);
+      localStorage.setItem('user_role', role);
       if (data.user.avatar_url) {
         localStorage.setItem('user_avatar', data.user.avatar_url);
       }
-      router.push('/groups');
+
+      window.location.href = redirectUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in');
     } finally {
@@ -65,7 +80,7 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('login_email', email);
-      router.push('/auth/verify-login');
+      router.push(`/auth/verify-login?redirect=${encodeURIComponent(redirectUrl)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send verification code');
     } finally {
@@ -199,3 +214,12 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground text-sm">Loading login...</div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+

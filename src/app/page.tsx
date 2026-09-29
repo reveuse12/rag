@@ -1197,9 +1197,6 @@ export default function LandingPage() {
             >
               llms.txt (AI Knowledge)
             </a>
-            <Link href="/admin" className="hover:text-primary transition-colors">
-              Admin Portal
-            </Link>
           </div>
         </div>
       </footer>
