@@ -1,0 +1,140 @@
+export type GroupCategory = 'Party' | 'Tourism' | 'Property' | 'University' | 'Custom';
+
+export interface User {
+  id: string;
+  email: string;
+  phone?: string;
+  display_name: string;
+  avatar_url?: string;
+  interest_tags: string[];
+  is_verified: boolean;
+  is_founding_member?: boolean;
+  college_email_badge?: boolean;
+  role: 'member' | 'moderator' | 'admin';
+  city: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  description: string;
+  category: GroupCategory;
+  is_public: boolean;
+  admin_id: string;
+  admin_name?: string;
+  avatar_url?: string;
+  cover_url?: string;
+  rules?: string;
+  member_count?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface GroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  user_name?: string;
+  user_avatar?: string;
+  role: 'admin' | 'member';
+  status: 'pending' | 'approved' | 'rejected';
+  joined_at: string;
+}
+
+export interface Meetup {
+  id: string;
+  title: string;
+  description: string;
+  place: string;
+  latitude?: number;
+  longitude?: number;
+  date_time: string;
+  group_id: string;
+  group_name?: string;
+  category?: GroupCategory;
+  capacity: number;
+  rsvps_count?: number;
+  ticket_price?: number; // ₹0 or fee
+  created_by: string;
+  creator_name?: string;
+  created_at: string;
+}
+
+export interface RSVP {
+  id: string;
+  meetup_id: string;
+  user_id: string;
+  user_display_name?: string;
+  user_avatar?: string;
+  status: 'going' | 'maybe' | 'not_going';
+  created_at: string;
+}
+
+export interface Sponsor {
+  id: string;
+  name: string;
+  tagline?: string;
+  logo_url?: string;
+  website_url?: string;
+  created_at: string;
+}
+
+export interface SponsorBanner {
+  id: string;
+  sponsor_id: string;
+  sponsor_name?: string;
+  placement: 'group' | 'event' | 'global';
+  target_id?: string;
+  title: string;
+  description: string;
+  image_url: string;
+  link_url: string;
+  start_date: string;
+  end_date: string;
+  created_at: string;
+}
+
+export interface Report {
+  id: string;
+  reporter_id: string;
+  reporter_name?: string;
+  reported_user_id?: string;
+  reported_user_name?: string;
+  reported_message_id?: string;
+  reported_item_type?: 'user' | 'message' | 'group' | 'meetup';
+  reason: string;
+  status: 'pending' | 'reviewed' | 'resolved';
+  created_at: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
+}
+
+export interface LocationData {
+  user_id: string;
+  display_name?: string;
+  avatar_url?: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  expires_at: string;
+  created_at?: string;
+}
+
+export interface FoundingCode {
+  id: string;
+  code: string;
+  is_used: boolean;
+  used_by?: string;
+  used_at?: string;
+  created_at: string;
+}
+
+export interface MediaUpload {
+  id: string;
+  url: string;
+  status: 'pending' | 'approved' | 'rejected';
+  uploaded_by: string;
+  created_at: string;
+}
