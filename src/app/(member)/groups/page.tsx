@@ -20,14 +20,13 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Group, GroupCategory } from '@/types';
-import { INITIAL_GROUPS, INITIAL_SPONSOR_BANNERS } from '@/lib/data';
+import { Group, GroupCategory, SponsorBanner } from '@/types';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
 import { useCity } from '@/context/city-context';
 
 export default function GroupsPage() {
   const { currentCity } = useCity();
-  const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -204,7 +203,7 @@ export default function GroupsPage() {
     setVerifiedOnly(false);
   };
 
-  const sponsorBanner = INITIAL_SPONSOR_BANNERS.find((b) => b.placement === 'global' || b.placement === 'group');
+  const [sponsorBanner, setSponsorBanner] = useState<SponsorBanner | null>(null);
 
   return (
     <div className="space-y-6">

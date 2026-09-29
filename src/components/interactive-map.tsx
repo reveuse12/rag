@@ -33,8 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
-import { GroupCategory, Meetup } from '@/types';
-import { INITIAL_GROUPS, INITIAL_MEETUPS, CURRENT_USER } from '@/lib/data';
+import { GroupCategory, Meetup, Group } from '@/types';
 import { useCity } from '@/context/city-context';
 
 export interface MapVenue {
@@ -96,13 +95,14 @@ export default function InteractiveSuratMap() {
   const [showHostModal, setShowHostModal] = useState(false);
   const [hostTitle, setHostTitle] = useState('');
   const [hostDescription, setHostDescription] = useState('');
-  const [hostGroupId, setHostGroupId] = useState(INITIAL_GROUPS[0]?.id || 'g-general');
+  const [hostGroupId, setHostGroupId] = useState('g-general');
+  const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
   const [hostDateTime, setHostDateTime] = useState('');
   const [hostCapacity, setHostCapacity] = useState(25);
   const [hostTicketPrice, setHostTicketPrice] = useState(0);
   const [hostSuccessToast, setHostSuccessToast] = useState<string | null>(null);
 
-  // Load venues and meetups on mount from localStorage
+  // Load venues, meetups, and groups on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedVenues = localStorage.getItem('cc_user_pinned_venues');
@@ -127,6 +127,19 @@ export default function InteractiveSuratMap() {
           }
         })
         .catch((err) => console.error('Error fetching map meetups:', err));
+
+      // Fetch live groups from API
+      fetch('/api/groups')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.groups)) {
+            setAvailableGroups(data.groups);
+            if (data.groups.length > 0) {
+              setHostGroupId(data.groups[0].id);
+            }
+          }
+        })
+        .catch((err) => console.error('Error fetching map groups:', err));
     }
   }, []);
 
@@ -618,14 +631,14 @@ export default function InteractiveSuratMap() {
     e.preventDefault();
     if (!pickedCoords) return;
 
-    const group = INITIAL_GROUPS.find((g) => g.id === hostGroupId) || {
+    const group = availableGroups.find((g) => g.id === hostGroupId) || {
       id: hostGroupId || 'g-general',
       name: 'Surat Community Circle',
       category: 'Custom' as const,
     };
     const creatorName =
       (typeof window !== 'undefined' && localStorage.getItem('user_display_name')) ||
-      CURRENT_USER.display_name;
+      'Verified Member';
 
     const newMeetup: Meetup = {
       id: `m-map-${Date.now()}`,
@@ -1070,11 +1083,15 @@ export default function InteractiveSuratMap() {
                   onChange={(e) => setHostGroupId(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
                 >
-                  {INITIAL_GROUPS.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name} ({g.category})
-                    </option>
-                  ))}
+                  {availableGroups.length > 0 ? (
+                    availableGroups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name} ({g.category})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="g-general">Surat General Circle (Custom)</option>
+                  )}
                 </select>
               </div>
 

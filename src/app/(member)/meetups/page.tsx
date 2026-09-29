@@ -21,7 +21,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Meetup, Group, GroupCategory } from '@/types';
-import { INITIAL_MEETUPS, INITIAL_GROUPS, CURRENT_USER } from '@/lib/data';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
 import type { SelectedLocation } from '@/components/location-picker';
 
@@ -38,7 +37,7 @@ const LocationPicker = dynamic(
 );
 
 export default function MeetupsPage() {
-  const [meetups, setMeetups] = useState<Meetup[]>(INITIAL_MEETUPS);
+  const [meetups, setMeetups] = useState<Meetup[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -51,14 +50,24 @@ export default function MeetupsPage() {
   const [place, setPlace] = useState('');
   const [venueCoordinates, setVenueCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [dateTime, setDateTime] = useState('');
-  const [availableGroups, setAvailableGroups] = useState<Group[]>(INITIAL_GROUPS);
-  const [groupId, setGroupId] = useState(INITIAL_GROUPS[0]?.id || 'g-general');
+  const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
+  const [groupId, setGroupId] = useState('g-general');
   const [capacity, setCapacity] = useState(30);
   const [ticketPrice, setTicketPrice] = useState(0);
 
   // Load custom meetups, groups, and RSVPs from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Fetch live groups from API
+      fetch('/api/groups')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.groups) && data.groups.length > 0) {
+            setAvailableGroups(data.groups);
+            setGroupId(data.groups[0].id);
+          }
+        })
+        .catch((err) => console.error('Error fetching meetups groups:', err));
       const storedCustomGroups = localStorage.getItem('cc_custom_groups');
       if (storedCustomGroups) {
         try {
@@ -189,7 +198,7 @@ export default function MeetupsPage() {
     const group = availableGroups.find((g) => g.id === groupId);
     const creatorName =
       (typeof window !== 'undefined' && localStorage.getItem('user_display_name')) ||
-      CURRENT_USER.display_name;
+      'Verified Member';
 
     const newMeetup: Meetup = {
       id: `m-${Date.now()}`,
@@ -605,7 +614,7 @@ export default function MeetupsPage() {
                 <div>
                   <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider">Attendee</div>
                   <div className="font-bold text-sm text-foreground flex items-center gap-1.5 mt-0.5">
-                    {(typeof window !== 'undefined' && localStorage.getItem('user_display_name')) || CURRENT_USER.display_name}
+                    {(typeof window !== 'undefined' && localStorage.getItem('user_display_name')) || 'Verified Member'}
                     <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                   </div>
                 </div>

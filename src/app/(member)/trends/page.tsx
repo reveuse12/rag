@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SocialTrend, TrendCategory, TrendPlatform } from '@/types';
-import { INITIAL_SURAT_TRENDS, INITIAL_SPONSOR_BANNERS } from '@/lib/data';
 import { useCity } from '@/context/city-context';
 
 const TREND_CATEGORIES: { label: string; value: string; emoji: string }[] = [
@@ -234,7 +233,7 @@ export default function TrendsPage() {
     return true;
   });
 
-  const sponsorBanner = INITIAL_SPONSOR_BANNERS[0];
+  const sponsorBanner = null;
 
   return (
     <div className="space-y-6">

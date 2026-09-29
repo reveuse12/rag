@@ -26,7 +26,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
 import { GroupCategory } from '@/types';
-import { INITIAL_GROUPS } from '@/lib/data';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
 
 // Live simulated channels for the Hero Command Center
@@ -208,7 +207,7 @@ export default function LandingPage() {
 
   const currentChannel = HERO_CHANNELS.find((c) => c.id === selectedChannelId) || HERO_CHANNELS[0];
   const currentNode = RADAR_NODES.find((n) => n.id === selectedNodeId) || RADAR_NODES[0];
-  const activeBentoGroup = INITIAL_GROUPS.find((g) => g.category === bentoCategory) || {
+  const activeBentoGroup = {
     id: 'preview',
     name: `${bentoCategory} Circle Surat`,
     description: 'Hyper-local circle connecting verified Surat members.',
@@ -218,7 +217,7 @@ export default function LandingPage() {
     cover_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
     rules: 'Respect community members',
     is_public: true,
-    admin_name: 'Prayag B.',
+    admin_name: 'CityCircle Surat',
     created_at: new Date().toISOString(),
   };
   const bentoConfig = CATEGORY_CONFIG[activeBentoGroup.category as GroupCategory] || CATEGORY_CONFIG.Custom;

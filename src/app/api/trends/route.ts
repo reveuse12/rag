@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { INITIAL_SURAT_TRENDS } from '@/lib/data';
 import { MAJOR_CITIES, DEFAULT_CITY } from '@/lib/cities';
 import { SocialTrend } from '@/types';
 import { rateLimiter } from '@/lib/rate-limit';
@@ -198,20 +197,7 @@ export async function GET(request: Request) {
           cityConfig.name
         );
 
-        let merged: SocialTrend[] = [];
-        if (citySlug === 'surat') {
-          // Fresh relative timestamps for Surat curated baseline
-          const baseline: SocialTrend[] = INITIAL_SURAT_TRENDS.map((t, idx) => ({
-            ...t,
-            posted_at: idx === 0 ? '15m ago' : idx === 1 ? '45m ago' : idx === 2 ? '2h ago' : '4h ago',
-          }));
-
-          const existingIds = new Set(baseline.map((t) => t.id));
-          const newLive = liveRedditPosts.filter((rp) => !existingIds.has(rp.id));
-          merged = [...newLive, ...baseline];
-        } else {
-          merged = liveRedditPosts.length > 0 ? liveRedditPosts : [];
-        }
+        const merged: SocialTrend[] = liveRedditPosts.length > 0 ? liveRedditPosts : [];
 
         // Store in cache
         globalCache.__TRENDS_CACHE__?.set(cacheKey, {

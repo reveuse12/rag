@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { INITIAL_GROUPS } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +22,7 @@ export async function GET(request: NextRequest) {
 
       const { data, error } = await query;
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return NextResponse.json(
           { groups: data },
           {
@@ -34,17 +33,11 @@ export async function GET(request: NextRequest) {
         );
       }
     } catch {
-      // Fallback to seeded groups
-    }
-
-    // High performance fallback
-    let filtered = INITIAL_GROUPS;
-    if (category) {
-      filtered = INITIAL_GROUPS.filter((g) => g.category.toLowerCase() === category.toLowerCase());
+      // Fallback
     }
 
     return NextResponse.json(
-      { groups: filtered },
+      { groups: [] },
       {
         headers: {
           'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',

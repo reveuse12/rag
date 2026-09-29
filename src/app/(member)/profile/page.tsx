@@ -34,7 +34,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Group, Meetup } from '@/types';
-import { CURRENT_USER, INITIAL_GROUPS, INITIAL_MEETUPS } from '@/lib/data';
 
 const AVAILABLE_TAGS = [
   'Tech', 'Startups', 'Food & Dining', 'Fitness', 'Photography',
@@ -67,7 +66,17 @@ export default function ProfilePage() {
 
   // Core Profile State
   const [user, setUser] = useState({
-    ...CURRENT_USER,
+    id: 'user',
+    email: '',
+    display_name: 'Member',
+    avatar_url: AVATAR_PRESETS[0],
+    interest_tags: ['Tech', 'Startups', 'Food & Dining'],
+    is_verified: true,
+    is_founding_member: true,
+    college_email_badge: false,
+    role: 'member',
+    city: 'Vesu, Surat',
+    created_at: new Date().toISOString(),
     bio: 'Tech enthusiast and active community explorer in Surat.',
   });
 

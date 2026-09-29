@@ -18,15 +18,15 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Group, Meetup } from '@/types';
-import { INITIAL_GROUPS, INITIAL_MEETUPS, INITIAL_SPONSOR_BANNERS, INITIAL_SURAT_TRENDS, CURRENT_USER } from '@/lib/data';
+import { Group, Meetup, SocialTrend, SponsorBanner } from '@/types';
 import { CATEGORY_CONFIG } from '@/lib/category-helpers';
 
 export default function DashboardPage() {
-  const sponsor = INITIAL_SPONSOR_BANNERS[0];
-  const [userName, setUserName] = React.useState(CURRENT_USER.display_name);
-  const [groups, setGroups] = React.useState(INITIAL_GROUPS);
-  const [meetups, setMeetups] = React.useState(INITIAL_MEETUPS);
+  const [sponsor, setSponsor] = React.useState<SponsorBanner | null>(null);
+  const [userName, setUserName] = React.useState('Member');
+  const [groups, setGroups] = React.useState<Group[]>([]);
+  const [meetups, setMeetups] = React.useState<Meetup[]>([]);
+  const [trends, setTrends] = React.useState<SocialTrend[]>([]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -60,6 +60,16 @@ export default function DashboardPage() {
           }
         })
         .catch((err) => console.error('Error fetching dashboard meetups:', err));
+
+      // Fetch live trends
+      fetch('/api/trends')
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.trends)) {
+            setTrends(data.trends);
+          }
+        })
+        .catch((err) => console.error('Error fetching dashboard trends:', err));
     }
   }, []);
 
@@ -316,7 +326,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {INITIAL_SURAT_TRENDS.slice(0, 3).map((trend) => {
+          {trends.slice(0, 3).map((trend) => {
             const isInstagram = trend.platform === 'instagram';
             return (
               <div

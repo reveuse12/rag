@@ -36,8 +36,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Group, Meetup } from '@/types';
-import { INITIAL_GROUPS, INITIAL_MEETUPS, INITIAL_SPONSOR_BANNERS, CURRENT_USER } from '@/lib/data';
+import { Group, Meetup, SponsorBanner } from '@/types';
 import { CATEGORY_CONFIG } from '@/lib/category-helpers';
 
 interface ChatMessage {
@@ -85,8 +84,8 @@ export default function GroupDetailPage() {
     description: 'Hyper-local circle connecting verified Surat members.',
     category: 'Custom',
     is_public: true,
-    admin_id: CURRENT_USER.id,
-    admin_name: CURRENT_USER.display_name,
+    admin_id: 'admin',
+    admin_name: 'Circle Admin',
     cover_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
     rules: '1. Respect all members\n2. No spam or uninvited solicitations',
     member_count: 1,
@@ -99,11 +98,9 @@ export default function GroupDetailPage() {
     created_at: new Date().toISOString(),
   };
 
-  const initialGroup = INITIAL_GROUPS.find((g) => g.id === groupId) || fallbackGroup;
+  const initialGroup = fallbackGroup;
   const [groupMeetups, setGroupMeetups] = useState<Meetup[]>([]);
-  const sponsorBanner = INITIAL_SPONSOR_BANNERS.find(
-    (b) => b.placement === 'group' && (b.target_id === initialGroup.id || !b.target_id)
-  ) || INITIAL_SPONSOR_BANNERS[0];
+  const [sponsorBanner, setSponsorBanner] = useState<SponsorBanner | null>(null);
 
   // Dynamic Group Settings State (WhatsApp-style Controls)
   const [group, setGroup] = useState<Group>(initialGroup);
@@ -155,11 +152,11 @@ export default function GroupDetailPage() {
 
   // Active User State
   const [activeUser, setActiveUser] = useState({
-    id: CURRENT_USER.id,
-    display_name: CURRENT_USER.display_name,
-    avatar_url: CURRENT_USER.avatar_url!,
-    is_verified: CURRENT_USER.is_verified,
-    role: CURRENT_USER.role,
+    id: 'user',
+    display_name: 'Member',
+    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    is_verified: true,
+    role: 'member',
   });
 
   // Load Group Settings, Active User, Real Members, and Joined State from localStorage
@@ -169,15 +166,16 @@ export default function GroupDetailPage() {
       const storedEmail = localStorage.getItem('user_email');
       const storedId = localStorage.getItem('user_id');
       const storedAvatar = localStorage.getItem('user_avatar');
+      const storedRole = localStorage.getItem('user_role') || 'member';
 
       const currentActiveUser = {
-        id: storedId || storedEmail || CURRENT_USER.id,
-        display_name: storedName || CURRENT_USER.display_name,
+        id: storedId || storedEmail || 'user',
+        display_name: storedName || 'Member',
         avatar_url:
           storedAvatar ||
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
         is_verified: true,
-        role: CURRENT_USER.role,
+        role: storedRole,
       };
 
       if (storedName) {
