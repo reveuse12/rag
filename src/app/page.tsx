@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   ShieldCheck,
@@ -21,13 +21,7 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Flame,
   Volume2,
-  Activity,
-  Layers,
-  Compass,
-  Zap,
-  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
@@ -52,7 +46,7 @@ const HERO_CHANNELS = [
         handle: '@prayag',
         badge: 'Admin · Founder',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        text: 'Surat AI Builders Demo Day locked in for Saturday at Vesu! 🚀 24 seats left.',
+        text: 'Surat AI Builders Demo Day locked in for Saturday at Vesu cafe! 🚀 24 seats left.',
         time: '2m ago',
         reactions: { '🔥': 14, '🚀': 9, '⚡': 6 },
       },
@@ -182,18 +176,6 @@ export default function LandingPage() {
   const [activeFaqCategory, setActiveFaqCategory] = useState<string>('all');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
 
-  // Mouse Spotlight Tracking for Awwwards-grade luxury glow
-  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
   const handleReactionClick = (key: string) => {
     setReactions((prev) => ({
       ...prev,
@@ -265,52 +247,49 @@ export default function LandingPage() {
   const filteredFaqs = activeFaqCategory === 'all' ? faqs : faqs.filter((f) => f.category === activeFaqCategory);
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen bg-[#070A0C] text-[#F3F4F6] selection:bg-teal-400/20 selection:text-teal-300 relative overflow-x-hidden font-sans dark-grid-bg"
-    >
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary relative overflow-x-hidden font-sans app-hero-mesh">
       <PWAInstallPrompt />
 
-      {/* Floating Ambient Aura Glows (Awwwards SOTA Atmosphere) */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[700px] pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute top-[-10%] left-[20%] w-[550px] h-[550px] rounded-full bg-teal-500/12 blur-[140px] animate-glow-breathe" />
-        <div className="absolute top-[10%] right-[15%] w-[480px] h-[480px] rounded-full bg-amber-500/8 blur-[130px] animate-glow-breathe [animation-delay:3s]" />
+      {/* Warm Ambient Radial Glows */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] animate-glow-breathe" />
+        <div className="absolute top-[10%] right-[15%] w-[420px] h-[420px] rounded-full bg-accent/10 blur-[110px] animate-glow-breathe [animation-delay:3s]" />
       </div>
 
       {/* NAVIGATION BAR */}
       <header className="sticky top-0 z-50 px-4 sm:px-6 pt-4 pb-2">
-        <nav className="max-w-6xl mx-auto h-14 rounded-2xl glass-panel px-4 sm:px-6 flex items-center justify-between transition-all">
+        <nav className="max-w-6xl mx-auto h-16 rounded-2xl app-glass-card px-4 sm:px-6 flex items-center justify-between transition-all">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-[#070A0C] font-black text-base shadow-[0_0_20px_rgba(45,212,191,0.4)] group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
               C
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-lg tracking-tight text-white font-heading">
+              <span className="font-black text-xl tracking-tight text-foreground font-heading">
                 CityCircle
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-teal-400/10 text-teal-300 rounded-full border border-teal-400/20 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-accent/20 text-accent-foreground rounded-full border border-accent/30 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                 Surat
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-7 text-xs font-semibold text-neutral-400">
-            <a href="#hero-command" className="hover:text-white transition-colors">
+          <div className="hidden md:flex items-center gap-7 text-xs font-semibold text-muted-foreground">
+            <a href="#hero-command" className="hover:text-foreground transition-colors">
               Command Deck
             </a>
-            <a href="#guilds" className="hover:text-white transition-colors">
+            <a href="#guilds" className="hover:text-foreground transition-colors">
               Guilds
             </a>
-            <a href="#privacy-vault" className="hover:text-white transition-colors">
+            <a href="#privacy-vault" className="hover:text-foreground transition-colors">
               Privacy Vault
             </a>
-            <a href="#founding-pass" className="hover:text-amber-300 transition-colors flex items-center gap-1 text-amber-400 font-bold">
+            <a href="#founding-pass" className="hover:text-accent-foreground transition-colors flex items-center gap-1 text-accent font-bold">
               <Sparkles className="w-3.5 h-3.5" />
               Founding Pass
             </a>
-            <a href="#faq" className="hover:text-white transition-colors">
+            <a href="#faq" className="hover:text-foreground transition-colors">
               FAQ
             </a>
           </div>
@@ -318,79 +297,79 @@ export default function LandingPage() {
           {/* Action CTAs */}
           <div className="flex items-center gap-3">
             <Link href="/auth/login">
-              <button className="text-xs font-semibold text-neutral-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">
+              <Button variant="ghost" size="sm" className="text-xs font-semibold text-muted-foreground hover:text-foreground h-9 px-3.5">
                 Sign In
-              </button>
+              </Button>
             </Link>
             <Link href="/auth/signup">
-              <button className="text-xs font-bold bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-300 hover:to-teal-400 text-[#070A0C] px-4 py-2 rounded-xl shadow-[0_0_25px_rgba(45,212,191,0.35)] hover:scale-105 transition-all active:scale-95">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-9 px-4 rounded-xl shadow-md shadow-primary/20 hover:scale-[1.02] transition-transform">
                 Join Surat Cohort
-              </button>
+              </Button>
             </Link>
           </div>
         </nav>
       </header>
 
       {/* HERO SECTION */}
-      <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
+      <section className="relative pt-10 pb-16 md:pt-16 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
         <div className="text-center max-w-3xl mx-auto mb-12">
           {/* Eyebrow Chip */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-pill text-xs font-semibold text-neutral-300 mb-8 border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-float-smooth">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full app-pill text-xs font-semibold text-foreground mb-8 border border-border shadow-xs animate-float-smooth">
             <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-400"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
-            <span className="text-neutral-400">Founding Member Pass:</span>
-            <span className="font-bold text-teal-300">318 / 400 Claimed</span>
-            <span className="text-neutral-500">·</span>
-            <span className="text-amber-300 font-bold">₹0 Free</span>
+            <span className="text-muted-foreground">Founding Member Pass:</span>
+            <span className="font-bold text-primary">318 / 400 Claimed</span>
+            <span className="text-border">·</span>
+            <span className="text-accent font-bold">₹0 Free</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-[-0.04em] text-white font-heading leading-[1.08] mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-foreground font-heading leading-[1.12] mb-6">
             Real Surat Communities. <br />
-            <span className="text-gradient-primary">
+            <span className="text-primary underline decoration-accent decoration-wavy decoration-3 underline-offset-8">
               Verified & Real-World.
             </span>
           </h1>
 
           {/* Subheading */}
-          <p className="text-base sm:text-lg text-neutral-400 max-w-2xl mx-auto mb-10 font-normal leading-relaxed">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10 font-normal leading-relaxed">
             The private local network for tech founders, weekend trekkers, specialty coffee foodies, and university alumni in Surat. 
-            Zero phone leaks, 300–500m fuzzed maps, and offline meetups that actually happen.
+            Zero contact exposure, 300–500m fuzzed maps, and offline meetups that actually happen.
           </p>
 
           {/* Dual Magnetic Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto mb-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto mb-10">
             <Link href="/auth/signup" className="w-full sm:w-auto flex-1">
-              <button className="w-full bg-gradient-to-r from-teal-400 via-teal-300 to-teal-400 text-[#070A0C] font-black text-sm h-12 px-6 rounded-2xl shadow-[0_0_35px_rgba(45,212,191,0.45)] hover:shadow-[0_0_50px_rgba(45,212,191,0.6)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+              <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm h-12 rounded-2xl shadow-md shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all">
                 <span>Claim Free Pass</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </Link>
             <a href="#hero-command" className="w-full sm:w-auto flex-1">
-              <button className="w-full h-12 glass-panel hover:bg-white/10 text-white font-semibold text-sm px-6 rounded-2xl border border-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2">
-                <span>Explore Command Deck</span>
-              </button>
+              <Button variant="outline" size="lg" className="w-full h-12 rounded-2xl border-border bg-card/80 text-foreground font-semibold text-sm hover:bg-card transition-all">
+                Explore Command Deck
+              </Button>
             </a>
           </div>
 
           {/* Micro Trust Indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-medium text-neutral-400">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-medium text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-teal-400" />
+              <ShieldCheck className="w-4 h-4 text-primary" />
               <span>Phone Verified</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Lock className="w-4 h-4 text-teal-400" />
+              <Lock className="w-4 h-4 text-primary" />
               <span>PostgreSQL RLS Protected</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-teal-400" />
+              <MapPin className="w-4 h-4 text-primary" />
               <span>300–500m Fuzzed GPS</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-teal-400" />
+              <CheckCircle2 className="w-4 h-4 text-primary" />
               <span>Indian IT Rules 2021</span>
             </div>
           </div>
@@ -399,29 +378,29 @@ export default function LandingPage() {
         {/* HERO COMMAND CENTER (Interactive Living Console) */}
         <div
           id="hero-command"
-          className="rounded-3xl glass-panel overflow-hidden border border-white/10 shadow-[0_25px_80px_-15px_rgba(0,0,0,0.8)] relative transition-all"
+          className="rounded-3xl app-glass-card overflow-hidden border border-border shadow-xl relative transition-all"
         >
           {/* Console Header Bar */}
-          <div className="px-4 sm:px-6 py-3.5 bg-[#0B1013]/90 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+          <div className="px-4 sm:px-6 py-3.5 bg-muted/60 border-b border-border flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-rose-500/80" />
-                <span className="w-3 h-3 rounded-full bg-amber-500/80" />
-                <span className="w-3 h-3 rounded-full bg-teal-500/80" />
+                <span className="w-3 h-3 rounded-full bg-danger/80" />
+                <span className="w-3 h-3 rounded-full bg-warning/80" />
+                <span className="w-3 h-3 rounded-full bg-success/80" />
               </div>
-              <span className="text-xs font-mono text-neutral-400 hidden sm:inline">
+              <span className="text-xs font-mono text-muted-foreground hidden sm:inline">
                 citycircle://surat.hub/live-console
               </span>
             </div>
 
             {/* Interactive Console Mode Switcher */}
-            <div className="flex items-center p-1 rounded-xl bg-black/40 border border-white/10 text-xs font-semibold">
+            <div className="flex items-center p-1 rounded-xl bg-background border border-border text-xs font-semibold">
               <button
                 onClick={() => setActiveTab('stream')}
                 className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                   activeTab === 'stream'
-                    ? 'bg-gradient-to-r from-teal-400 to-teal-500 text-black font-bold shadow-md'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
@@ -431,8 +410,8 @@ export default function LandingPage() {
                 onClick={() => setActiveTab('radar')}
                 className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                   activeTab === 'radar'
-                    ? 'bg-gradient-to-r from-teal-400 to-teal-500 text-black font-bold shadow-md'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Radio className="w-3.5 h-3.5" />
@@ -442,18 +421,18 @@ export default function LandingPage() {
                 onClick={() => setActiveTab('ticket')}
                 className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                   activeTab === 'ticket'
-                    ? 'bg-gradient-to-r from-teal-400 to-teal-500 text-black font-bold shadow-md'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Event Ticket</span>
+                <span>Event Pass</span>
               </button>
             </div>
           </div>
 
           {/* Console Body */}
-          <div className="p-4 sm:p-7 min-h-[420px] bg-[#070A0C]/90">
+          <div className="p-4 sm:p-7 min-h-[400px] bg-card">
             {/* VIEW 1: LIVE FEED & AUDIO HOPS */}
             {activeTab === 'stream' && (
               <div>
@@ -467,13 +446,13 @@ export default function LandingPage() {
                         onClick={() => setSelectedChannelId(ch.id)}
                         className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
                           isSelected
-                            ? 'bg-teal-400/15 text-teal-300 border border-teal-400/40 shadow-[0_0_15px_rgba(45,212,191,0.2)]'
-                            : 'bg-white/5 text-neutral-400 border border-white/5 hover:bg-white/10 hover:text-neutral-200'
+                            ? 'bg-primary/15 text-primary border border-primary/30 shadow-xs'
+                            : 'bg-muted/40 text-muted-foreground border border-transparent hover:bg-muted'
                         }`}
                       >
                         <span>{ch.tag}</span>
-                        <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                        <span className="text-[10px] font-mono text-neutral-400">{ch.activeCount} online</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                        <span className="text-[10px] font-mono opacity-80">{ch.activeCount} online</span>
                       </button>
                     );
                   })}
@@ -481,24 +460,24 @@ export default function LandingPage() {
 
                 {/* Live Audio Room Banner if Active */}
                 {currentChannel.audioLive && (
-                  <div className="mb-5 p-3.5 rounded-2xl bg-gradient-to-r from-teal-950/60 via-[#0B1416] to-[#070A0C] border border-teal-500/30 flex items-center justify-between gap-3">
+                  <div className="mb-5 p-3.5 rounded-2xl bg-secondary/70 border border-primary/20 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-teal-400/20 text-teal-300 flex items-center justify-center shrink-0 animate-pulse">
+                      <div className="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 animate-pulse">
                         <Volume2 className="w-4 h-4" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400 bg-teal-400/10 px-2 py-0.2 rounded-full border border-teal-400/20">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.2 rounded-full border border-primary/20">
                             Live Voice Room
                           </span>
-                          <span className="text-xs font-bold text-white">{currentChannel.audioTitle}</span>
+                          <span className="text-xs font-bold text-foreground">{currentChannel.audioTitle}</span>
                         </div>
-                        <div className="text-[11px] text-neutral-400 mt-0.5">
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
                           Speakers: {currentChannel.audioSpeakers.join(' · ')}
                         </div>
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold text-teal-300 px-3 py-1 rounded-xl bg-teal-400/10 border border-teal-400/20 hidden sm:inline">
+                    <span className="text-[11px] font-bold text-primary px-3 py-1 rounded-xl bg-primary/10 border border-primary/20 hidden sm:inline">
                       18 Listening
                     </span>
                   </div>
@@ -509,25 +488,25 @@ export default function LandingPage() {
                   {currentChannel.messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className="p-4 rounded-2xl bg-[#0B1013]/90 border border-white/8 hover:border-teal-500/30 transition-all flex items-start gap-3.5 shadow-sm"
+                      className="p-4 rounded-2xl bg-card border border-border shadow-xs hover:border-primary/40 transition-all flex items-start gap-3.5"
                     >
                       <img
                         src={msg.avatar}
                         alt={msg.user}
-                        className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-white/10"
+                        className="w-10 h-10 rounded-xl object-cover shrink-0 border border-border"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-white">{msg.user}</span>
-                            <span className="text-[10px] font-mono text-neutral-400">{msg.handle}</span>
-                            <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-teal-400/10 text-teal-300 border border-teal-400/20">
+                            <span className="text-xs font-bold text-foreground">{msg.user}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground">{msg.handle}</span>
+                            <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
                               {msg.badge}
                             </span>
                           </div>
-                          <span className="text-[10px] text-neutral-500">{msg.time}</span>
+                          <span className="text-[10px] text-muted-foreground">{msg.time}</span>
                         </div>
-                        <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed mb-3">
+                        <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed mb-3">
                           {msg.text}
                         </p>
 
@@ -540,7 +519,7 @@ export default function LandingPage() {
                               <button
                                 key={emoji}
                                 onClick={() => handleReactionClick(reactionKey)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-teal-400/15 hover:text-teal-300 text-xs font-semibold text-neutral-300 border border-white/8 hover:border-teal-400/30 transition-all active:scale-95"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-primary/10 hover:text-primary text-xs font-semibold text-muted-foreground border border-border transition-all active:scale-95"
                               >
                                 <span>{emoji}</span>
                                 <span className="font-mono text-[11px]">{currentCount}</span>
@@ -553,11 +532,11 @@ export default function LandingPage() {
                   ))}
 
                   {/* Typing Pulse */}
-                  <div className="flex items-center gap-2 px-2 py-1 text-xs text-neutral-400">
+                  <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground">
                     <span className="flex gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce [animation-delay:0.2s]" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce [animation-delay:0.4s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.2s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.4s]" />
                     </span>
                     <span className="text-[11px]">3 verified members active in this circle...</span>
                   </div>
@@ -568,24 +547,24 @@ export default function LandingPage() {
             {/* VIEW 2: SURAT RADAR & DENSITY MATRIX */}
             {activeTab === 'radar' && (
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
                   <div>
-                    <div className="text-sm font-bold text-white flex items-center gap-2">
-                      <Radio className="w-4 h-4 text-teal-400 animate-pulse" />
+                    <div className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <Radio className="w-4 h-4 text-primary animate-pulse" />
                       <span>Surat Proximity Matrix & Active Beacons</span>
                     </div>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-muted-foreground">
                       Live anonymized density heatmap. Exact GPS is never stored.
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-neutral-400">Fuzzing Halo:</span>
-                    <div className="flex p-0.5 rounded-xl bg-black/50 border border-white/10 text-xs">
+                    <span className="text-xs font-semibold text-muted-foreground">Fuzzing Halo:</span>
+                    <div className="flex p-0.5 rounded-xl bg-muted border border-border text-xs">
                       <button
                         onClick={() => setFuzzRadius(300)}
                         className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                          fuzzRadius === 300 ? 'bg-teal-400 text-black shadow-xs' : 'text-neutral-400'
+                          fuzzRadius === 300 ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground'
                         }`}
                       >
                         300m (Venue)
@@ -593,7 +572,7 @@ export default function LandingPage() {
                       <button
                         onClick={() => setFuzzRadius(500)}
                         className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                          fuzzRadius === 500 ? 'bg-teal-400 text-black shadow-xs' : 'text-neutral-400'
+                          fuzzRadius === 500 ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground'
                         }`}
                       >
                         500m (Neighborhood)
@@ -603,19 +582,19 @@ export default function LandingPage() {
                 </div>
 
                 {/* Radar Grid Canvas */}
-                <div className="relative h-72 sm:h-80 w-full rounded-2xl bg-[#05080A] border border-white/10 overflow-hidden flex items-center justify-center">
+                <div className="relative h-72 sm:h-80 w-full rounded-2xl bg-secondary/40 border border-border overflow-hidden flex items-center justify-center">
                   {/* Glowing Radar Concentric Rings */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
-                    <div className="w-36 h-36 rounded-full border border-teal-400 animate-pulse-radar" />
-                    <div className="w-64 h-64 rounded-full border border-teal-400/60" />
-                    <div className="w-96 h-96 rounded-full border border-teal-400/30" />
-                    <div className="w-full h-full border border-teal-400/20" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                    <div className="w-36 h-36 rounded-full border border-primary animate-pulse-radar" />
+                    <div className="w-64 h-64 rounded-full border border-primary/60" />
+                    <div className="w-96 h-96 rounded-full border border-primary/30" />
+                    <div className="w-full h-full border border-primary/20" />
                   </div>
 
                   {/* Stylized Tapi River SVG Graphic */}
-                  <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M 0 160 Q 250 80 500 180 T 1000 120" fill="none" stroke="#2DD4BF" strokeWidth="12" />
-                    <path d="M 0 160 Q 250 80 500 180 T 1000 120" fill="none" stroke="#A5F3FC" strokeWidth="2" strokeDasharray="6 6" />
+                  <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 0 160 Q 250 80 500 180 T 1000 120" fill="none" stroke="#0F5257" strokeWidth="12" />
+                    <path d="M 0 160 Q 250 80 500 180 T 1000 120" fill="none" stroke="#0F5257" strokeWidth="2" strokeDasharray="6 6" />
                   </svg>
 
                   {/* Hotspot Beacons */}
@@ -631,17 +610,17 @@ export default function LandingPage() {
                         <div className="relative flex items-center justify-center">
                           {/* Fuzz Radius Visual Aura */}
                           <span
-                            className={`absolute rounded-full border border-teal-400/30 bg-teal-400/10 transition-all ${
+                            className={`absolute rounded-full border border-primary/30 bg-primary/10 transition-all ${
                               isSelected
                                 ? fuzzRadius === 500 ? 'w-24 h-24 scale-125' : 'w-16 h-16 scale-110'
                                 : 'w-10 h-10 opacity-40 group-hover:opacity-80'
                             }`}
                           />
                           <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-lg ${
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md ${
                               isSelected
-                                ? 'bg-amber-400 text-black scale-125 ring-4 ring-amber-400/30 shadow-[0_0_20px_rgba(245,158,11,0.6)]'
-                                : 'bg-teal-400 text-black group-hover:scale-110 shadow-[0_0_15px_rgba(45,212,191,0.5)]'
+                                ? 'bg-accent text-accent-foreground scale-125 ring-4 ring-accent/30'
+                                : 'bg-primary text-primary-foreground group-hover:scale-110'
                             }`}
                           >
                             {node.active}
@@ -650,18 +629,18 @@ export default function LandingPage() {
 
                         {/* Interactive Tooltip Card */}
                         <div
-                          className={`absolute top-9 left-1/2 -translate-x-1/2 px-3 py-2 rounded-xl bg-[#0B1013]/95 border border-teal-400/40 text-xs whitespace-nowrap shadow-2xl transition-all z-20 ${
+                          className={`absolute top-9 left-1/2 -translate-x-1/2 px-3 py-2 rounded-xl bg-card border border-border text-xs whitespace-nowrap shadow-xl transition-all z-20 ${
                             isSelected
                               ? 'opacity-100 scale-100'
                               : 'opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100'
                           }`}
                         >
-                          <div className="font-bold text-white flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                          <div className="font-bold text-foreground flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                             <span>{node.name}</span>
                           </div>
-                          <div className="text-[10px] text-teal-300 mt-0.5">{node.note} · {node.active} active now</div>
-                          <div className="text-[9px] font-mono text-neutral-400">{node.coords} ({node.trend})</div>
+                          <div className="text-[10px] text-primary font-semibold mt-0.5">{node.note} · {node.active} active now</div>
+                          <div className="text-[9px] font-mono text-muted-foreground">{node.coords} ({node.trend})</div>
                         </div>
                       </button>
                     );
@@ -673,39 +652,40 @@ export default function LandingPage() {
             {/* VIEW 3: EVENT PASS MOCKUP */}
             {activeTab === 'ticket' && (
               <div className="max-w-xl mx-auto py-2">
-                <div className="p-6 rounded-3xl bg-gradient-to-br from-[#0E1518] via-[#090D0F] to-[#0E1518] border-2 border-teal-400/30 relative overflow-hidden holographic-sheen shadow-[0_0_40px_rgba(45,212,191,0.15)]">
+                <div className="p-6 rounded-3xl bg-secondary/50 border-2 border-dashed border-border relative overflow-hidden holographic-gold shadow-md">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold text-teal-300 bg-teal-400/10 px-3 py-1 rounded-full border border-teal-400/20">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
                       Surat Tech & Startup Circle
                     </span>
-                    <span className="text-xs font-black text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">
+                    <span className="text-xs font-black text-accent bg-accent/15 px-3 py-1 rounded-full border border-accent/30">
                       VIP PASS · ₹0 FREE
                     </span>
                   </div>
 
-                  <h3 className="text-xl sm:text-2xl font-black text-white font-heading mb-2">
+                  <h3 className="text-xl sm:text-2xl font-black text-foreground font-heading mb-2">
                     Surat AI & Founder Mixer #04
                   </h3>
-                  <div className="space-y-1.5 text-xs text-neutral-300 mb-6">
+                  <div className="space-y-1.5 text-xs text-muted-foreground mb-6">
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-teal-400" />
+                      <Calendar className="w-4 h-4 text-primary" />
                       <span>Saturday, Oct 18 · 5:30 PM – 8:30 PM IST</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-teal-400" />
+                      <MapPin className="w-4 h-4 text-primary" />
                       <span>The Roastery Cafe, VIP Road, Vesu, Surat</span>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                  <div className="pt-4 border-t border-border flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-semibold text-white">
-                        <span className="text-teal-300 font-bold">{rsvpCount}</span> / 24 Seats Filled
+                      <div className="text-xs font-semibold text-foreground">
+                        <span className="text-primary font-bold">{rsvpCount}</span> / 24 Seats Filled
                       </div>
-                      <div className="text-[10px] text-neutral-400">Coffee & Demo Slots Included</div>
+                      <div className="text-[10px] text-muted-foreground">Coffee & Demo Slots Included</div>
                     </div>
 
-                    <button
+                    <Button
+                      size="sm"
                       onClick={() => {
                         if (!isRsvpd) {
                           setIsRsvpd(true);
@@ -714,12 +694,12 @@ export default function LandingPage() {
                       }}
                       className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all ${
                         isRsvpd
-                          ? 'bg-teal-400 text-black shadow-[0_0_20px_rgba(45,212,191,0.5)]'
-                          : 'bg-white text-black hover:bg-neutral-200'
+                          ? 'bg-success text-white shadow-xs'
+                          : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                       }`}
                     >
                       {isRsvpd ? '✓ RSVP Confirmed!' : 'Simulate 1-Click RSVP'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -728,66 +708,66 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* OBSIDIAN MARQUEE TICKER */}
-      <div className="w-full bg-[#05080A] border-y border-white/8 py-3.5 overflow-hidden">
-        <div className="animate-marquee items-center gap-8 text-xs font-semibold text-neutral-400">
+      {/* MARQUEE TICKER */}
+      <div className="w-full bg-muted/50 border-y border-border py-3.5 overflow-hidden">
+        <div className="animate-marquee items-center gap-8 text-xs font-semibold text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-            <span className="text-neutral-200">⚡ Surat Tech Circle hosted AI Mixer at Vesu</span>
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="text-foreground">⚡ Surat Tech Circle hosted AI Mixer at Vesu</span>
           </div>
-          <span className="text-white/10">/</span>
+          <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-teal-400" />
-            <span className="text-neutral-200">100% Phone Verified & Indian IT Rules 2021 Compliant</span>
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            <span className="text-foreground">100% Phone Verified & Indian IT Rules 2021 Compliant</span>
           </div>
-          <span className="text-white/10">/</span>
+          <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            <span className="text-neutral-200">🚴 Dumas Sunrise Ride organized with 14 RSVPs</span>
+            <span className="w-2 h-2 rounded-full bg-accent" />
+            <span className="text-foreground">🚴 Dumas Sunrise Ride organized with 14 RSVPs</span>
           </div>
-          <span className="text-white/10">/</span>
+          <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-teal-400" />
-            <span className="text-neutral-200">PostgreSQL Row-Level Security: Zero Contact Leak</span>
+            <Lock className="w-4 h-4 text-primary" />
+            <span className="text-foreground">PostgreSQL Row-Level Security: Zero Contact Leak</span>
           </div>
-          <span className="text-white/10">/</span>
+          <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-amber-400" />
-            <span className="text-neutral-200">🎓 34 SVNIT Alumni joined this week</span>
+            <Award className="w-4 h-4 text-accent" />
+            <span className="text-foreground">🎓 34 SVNIT Alumni joined this week</span>
           </div>
-          <span className="text-white/10">/</span>
+          <span className="text-border">/</span>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-            <span className="text-neutral-200">☕ Surat Foodies discovered new artisanal roasters in Piplod</span>
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="text-foreground">☕ Surat Foodies discovered new artisanal roasters in Piplod</span>
           </div>
-          <span className="text-white/10">/</span>
+          <span className="text-border">/</span>
         </div>
       </div>
 
-      {/* AWWWARDS BENTO GRID */}
-      <section id="guilds" className="py-20 md:py-28 px-4 sm:px-6 max-w-6xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="text-xs font-bold uppercase tracking-widest text-teal-400 mb-2">
+      {/* BENTO GRID */}
+      <section id="guilds" className="py-16 md:py-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
             Architecture of Trust
           </div>
-          <h2 className="text-3xl sm:text-5xl font-black font-heading text-white tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold font-heading text-foreground tracking-tight mb-3">
             Designed for Real Communities. Built for Total Safety.
           </h2>
-          <p className="text-sm text-neutral-400">
-            A high-craft platform built to eliminate spam WhatsApp groups and replace them with verified local interest circles.
+          <p className="text-sm text-muted-foreground">
+            A verified platform built to eliminate spam WhatsApp groups and replace them with focused local interest circles.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* BENTO 1: Interactive Circle Discovery (Span 7) */}
-          <div className="md:col-span-7 rounded-3xl glass-panel glass-panel-hover p-6 sm:p-8 flex flex-col justify-between">
+          <div className="md:col-span-7 rounded-3xl app-glass-card app-glass-card-hover p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
                   1. Live Circle Discovery
                 </span>
-                <span className="text-xs font-mono text-neutral-400">
-                  5 Guilds Active
+                <span className="text-xs font-mono text-muted-foreground">
+                  5 Categories Active
                 </span>
               </div>
 
@@ -803,8 +783,8 @@ export default function LandingPage() {
                       onClick={() => setBentoCategory(g.category)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
                         isSelected
-                          ? 'bg-teal-400 text-black shadow-[0_0_15px_rgba(45,212,191,0.4)] scale-105'
-                          : 'bg-white/5 text-neutral-400 hover:bg-white/10 hover:text-white'
+                          ? 'bg-primary text-primary-foreground shadow-xs scale-105'
+                          : 'bg-muted/70 text-muted-foreground hover:bg-muted'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
@@ -815,7 +795,7 @@ export default function LandingPage() {
               </div>
 
               {/* Featured Circle Card */}
-              <div className="rounded-2xl border border-white/10 overflow-hidden bg-[#070A0C]/90">
+              <div className="rounded-2xl border border-border overflow-hidden bg-background">
                 <div className="relative h-44 overflow-hidden">
                   <img
                     src={activeBentoGroup.cover_url}
@@ -823,29 +803,29 @@ export default function LandingPage() {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-3 left-3">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-black/80 backdrop-blur-md text-white border border-white/10">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-card/90 backdrop-blur-md text-foreground border border-border">
                       <BentoIcon className="w-3.5 h-3.5" style={{ color: bentoConfig.color }} />
                       {activeBentoGroup.category}
                     </span>
                   </div>
-                  <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-bold text-white border border-white/10">
+                  <div className="absolute bottom-3 right-3 bg-card/90 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-bold text-foreground border border-border">
                     {activeBentoGroup.member_count} / {activeBentoGroup.max_members} members
                   </div>
                 </div>
 
                 <div className="p-5">
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-1.5">{activeBentoGroup.name}</h3>
-                  <p className="text-xs text-neutral-400 line-clamp-2 mb-4 leading-relaxed">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-1.5">{activeBentoGroup.name}</h3>
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
                     {activeBentoGroup.description}
                   </p>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
-                    <span className="text-neutral-400">Host: <strong className="text-white">{activeBentoGroup.admin_name}</strong></span>
+                  <div className="flex items-center justify-between pt-3 border-t border-border text-xs">
+                    <span className="text-muted-foreground">Host: <strong className="text-foreground">{activeBentoGroup.admin_name}</strong></span>
                     <Link href={`/groups/${activeBentoGroup.id}`}>
-                      <button className="bg-white/10 hover:bg-teal-400 hover:text-black text-white text-xs font-bold px-3.5 py-1.5 rounded-xl border border-white/10 hover:border-transparent transition-all flex items-center gap-1">
+                      <Button size="sm" variant="outline" className="text-xs font-bold h-8 px-3.5 hover:bg-primary hover:text-primary-foreground">
                         Preview Circle
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                        <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
                     </Link>
                   </div>
                 </div>
@@ -854,33 +834,33 @@ export default function LandingPage() {
           </div>
 
           {/* BENTO 2: Privacy Vault (Span 5) */}
-          <div id="privacy-vault" className="md:col-span-5 rounded-3xl glass-panel glass-panel-hover p-6 sm:p-8 flex flex-col justify-between">
+          <div id="privacy-vault" className="md:col-span-5 rounded-3xl app-glass-card app-glass-card-hover p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
                   2. Privacy Vault
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-teal-400/10 text-teal-300 font-bold border border-teal-400/20">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary font-bold border border-primary/20">
                   Postgres RLS Locked
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold font-heading text-white mb-2">
+              <h3 className="text-xl font-bold font-heading text-foreground mb-2">
                 Server-Side GPS Fuzzing
               </h3>
-              <p className="text-xs text-neutral-400 mb-6 leading-relaxed">
+              <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
                 Raw coordinates and phone numbers are isolated and never broadcasted to peers.
               </p>
 
               {/* Interactive Privacy Simulation Switcher */}
-              <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3 mb-6">
+              <div className="p-4 rounded-2xl bg-muted/60 border border-border space-y-3 mb-6">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-neutral-300">Data Exposure View:</span>
-                  <div className="flex p-0.5 rounded-lg bg-black/60 border border-white/10 text-[11px] font-bold">
+                  <span className="font-semibold text-foreground">Data Exposure View:</span>
+                  <div className="flex p-0.5 rounded-lg bg-card border border-border text-[11px] font-bold">
                     <button
                       onClick={() => setPrivacyMode('shielded')}
                       className={`px-2.5 py-1 rounded transition-all ${
-                        privacyMode === 'shielded' ? 'bg-teal-400 text-black shadow-xs' : 'text-neutral-400'
+                        privacyMode === 'shielded' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground'
                       }`}
                     >
                       Shielded Peer View
@@ -888,7 +868,7 @@ export default function LandingPage() {
                     <button
                       onClick={() => setPrivacyMode('raw')}
                       className={`px-2.5 py-1 rounded transition-all ${
-                        privacyMode === 'raw' ? 'bg-rose-500 text-white' : 'text-neutral-400'
+                        privacyMode === 'raw' ? 'bg-danger text-white' : 'text-muted-foreground'
                       }`}
                     >
                       Raw Device
@@ -896,31 +876,31 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#070A0C] border border-white/10 text-xs space-y-2.5">
+                <div className="p-3.5 rounded-xl bg-card border border-border text-xs space-y-2.5">
                   {privacyMode === 'shielded' ? (
                     <>
-                      <div className="flex items-center justify-between text-teal-400">
+                      <div className="flex items-center justify-between text-primary">
                         <span className="flex items-center gap-1.5 font-bold">
                           <EyeOff className="w-3.5 h-3.5" /> Phone Number & Email
                         </span>
-                        <span className="font-mono text-[11px]">PROTECTED (RLS)</span>
+                        <span className="font-mono text-[11px] text-success font-bold">PROTECTED (RLS)</span>
                       </div>
-                      <div className="flex items-center justify-between text-neutral-300">
-                        <span className="flex items-center gap-1.5 font-medium">
-                          <MapPin className="w-3.5 h-3.5 text-teal-400" /> GPS Coordinates
+                      <div className="flex items-center justify-between text-muted-foreground">
+                        <span className="flex items-center gap-1.5 font-medium text-foreground">
+                          <MapPin className="w-3.5 h-3.5 text-primary" /> GPS Coordinates
                         </span>
-                        <span className="font-mono text-[11px] text-teal-300">Fuzzed ~420m (Vesu)</span>
+                        <span className="font-mono text-[11px] text-primary font-semibold">Fuzzed ~420m (Vesu)</span>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center justify-between text-rose-400 font-medium">
+                      <div className="flex items-center justify-between text-danger font-medium">
                         <span className="flex items-center gap-1.5">
                           <Eye className="w-3.5 h-3.5" /> Raw GPS Coordinates
                         </span>
                         <span className="font-mono text-[11px]">21.1442° N, 72.7719° E</span>
                       </div>
-                      <div className="text-[11px] text-neutral-500">
+                      <div className="text-[11px] text-muted-foreground">
                         ⚠️ Raw coordinates are auto-scrambled before database insertion.
                       </div>
                     </>
@@ -929,29 +909,29 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-neutral-400 pt-4 border-t border-white/10">
-              <ShieldCheck className="w-4 h-4 text-teal-400 shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-4 border-t border-border">
+              <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
               <span>Auto-purged after 3 hours + Instant 1-tap panic button</span>
             </div>
           </div>
 
           {/* BENTO 3: Holographic Pass VIP Generator (Span 6) */}
-          <div id="founding-pass" className="md:col-span-6 rounded-3xl glass-panel glass-panel-hover p-6 sm:p-8 flex flex-col justify-between">
+          <div id="founding-pass" className="md:col-span-6 rounded-3xl app-glass-card app-glass-card-hover p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-accent">
                   3. VIP Founding Pass
                 </span>
-                <span className="text-xs font-mono text-neutral-400">
+                <span className="text-xs font-mono text-muted-foreground">
                   First 400 Members
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold font-heading text-white mb-2">
+              <h3 className="text-xl font-bold font-heading text-foreground mb-2">
                 Unlock ₹0 Free Founding Access
               </h3>
-              <p className="text-xs text-neutral-400 mb-5 leading-relaxed">
-                Click one of our partner codes to auto-validate and claim your lifetime founding badge:
+              <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
+                Click one of our partner codes to auto-validate and claim your lifetime founding pass:
               </p>
 
               {/* Quick Code Buttons */}
@@ -960,10 +940,10 @@ export default function LandingPage() {
                   <button
                     key={code}
                     onClick={() => handleApplyCode(code)}
-                    className="px-3 py-1.5 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-mono font-bold border border-amber-400/30 transition-all flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-accent/15 hover:bg-accent/25 text-accent-foreground text-xs font-mono font-bold border border-accent/30 transition-all flex items-center gap-1.5"
                   >
                     <span>{code}</span>
-                    {copiedCode === code ? <Check className="w-3 h-3 text-teal-400" /> : <Copy className="w-3 h-3 opacity-60" />}
+                    {copiedCode === code ? <Check className="w-3 h-3 text-success" /> : <Copy className="w-3 h-3 opacity-60" />}
                   </button>
                 ))}
               </div>
@@ -977,75 +957,75 @@ export default function LandingPage() {
                     setPromoStatus('idle');
                   }}
                   placeholder="Enter Code (e.g. FOUNDER2026)"
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 bg-black/60 text-white font-mono font-bold text-xs uppercase tracking-wider focus:outline-hidden focus:border-teal-400 transition-all"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-input bg-card text-foreground font-mono font-bold text-xs uppercase tracking-wider focus:outline-hidden focus:ring-2 focus:ring-primary transition-all"
                 />
-                <button
+                <Button
                   type="submit"
-                  className="bg-white hover:bg-neutral-200 text-black font-bold text-xs px-5 rounded-xl transition-all"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs px-5 rounded-xl shadow-xs"
                 >
                   Verify
-                </button>
+                </Button>
               </form>
 
               {promoStatus === 'valid' && (
-                <div className="p-3 bg-teal-400/15 border border-teal-400/30 rounded-xl text-xs text-teal-300 font-semibold flex items-center gap-2">
+                <div className="p-3 bg-success/15 border border-success/30 rounded-xl text-xs text-success font-semibold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span>Valid Code! VIP ₹0 Founding Pass unlocked.</span>
                 </div>
               )}
               {promoStatus === 'invalid' && (
-                <div className="p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-xs text-rose-300 font-semibold flex items-center gap-2">
+                <div className="p-3 bg-danger/15 border border-danger/30 rounded-xl text-xs text-danger font-semibold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>Invalid code. Tap FOUNDER2026 above to test.</span>
                 </div>
               )}
             </div>
 
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-border">
               <Link href="/auth/signup">
-                <button className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black text-xs h-10 rounded-xl shadow-[0_0_25px_rgba(245,158,11,0.3)] transition-all">
+                <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-black text-xs h-10 rounded-xl shadow-md shadow-accent/20 transition-all">
                   Claim Membership & Register
-                </button>
+                </Button>
               </Link>
             </div>
           </div>
 
           {/* BENTO 4: Safety & Moderation (Span 6) */}
-          <div className="md:col-span-6 rounded-3xl glass-panel glass-panel-hover p-6 sm:p-8 flex flex-col justify-between">
+          <div className="md:col-span-6 rounded-3xl app-glass-card app-glass-card-hover p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
                   4. Indian IT Rules 2021
                 </span>
-                <span className="text-xs font-mono text-neutral-400">
+                <span className="text-xs font-mono text-muted-foreground">
                   24h Grievance SLA
                 </span>
               </div>
 
-              <h3 className="text-xl font-bold font-heading text-white mb-2">
+              <h3 className="text-xl font-bold font-heading text-foreground mb-2">
                 Pre-Moderated Media & Verified Community
               </h3>
-              <p className="text-xs text-neutral-400 mb-6 leading-relaxed">
+              <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
                 Dedicated local moderation in Surat ensures civil discussions with rapid grievance resolution.
               </p>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10">
-                  <ShieldCheck className="w-5 h-5 text-teal-400 mb-2" />
-                  <div className="text-xs font-bold text-white mb-1">Pre-Screened Uploads</div>
-                  <div className="text-[11px] text-neutral-400">Automated media screening pipeline.</div>
+                <div className="p-3.5 rounded-2xl bg-muted/50 border border-border">
+                  <ShieldCheck className="w-5 h-5 text-primary mb-2" />
+                  <div className="text-xs font-bold text-foreground mb-1">Pre-Screened Uploads</div>
+                  <div className="text-[11px] text-muted-foreground">Automated media screening pipeline.</div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10">
-                  <Clock className="w-5 h-5 text-amber-400 mb-2" />
-                  <div className="text-xs font-bold text-white mb-1">24h Grievance SLA</div>
-                  <div className="text-[11px] text-neutral-400">Surat Grievance Officer reviews all flags.</div>
+                <div className="p-3.5 rounded-2xl bg-muted/50 border border-border">
+                  <Clock className="w-5 h-5 text-accent mb-2" />
+                  <div className="text-xs font-bold text-foreground mb-1">24h Grievance SLA</div>
+                  <div className="text-[11px] text-muted-foreground">Surat Grievance Officer reviews all flags.</div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs">
-              <Link href="/grievance" className="text-teal-300 font-semibold hover:underline flex items-center gap-1">
+            <div className="pt-4 border-t border-border flex items-center justify-between text-xs">
+              <Link href="/grievance" className="text-primary font-semibold hover:underline flex items-center gap-1">
                 View Grievance Officer Details <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -1054,58 +1034,58 @@ export default function LandingPage() {
       </section>
 
       {/* SURAT LOCAL VOICES */}
-      <section className="py-16 md:py-24 px-4 sm:px-6 max-w-6xl mx-auto w-full border-t border-white/8">
+      <section className="py-16 md:py-20 px-4 sm:px-6 max-w-6xl mx-auto w-full border-t border-border">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="text-xs font-bold uppercase tracking-widest text-teal-400 mb-2">
+          <div className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
             Surat Community Voices
           </div>
-          <h2 className="text-2xl sm:text-4xl font-black font-heading text-white">
+          <h2 className="text-2xl sm:text-3xl font-bold font-heading text-foreground">
             What Surat Locals Say
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 rounded-3xl glass-panel flex flex-col justify-between">
-            <p className="text-xs sm:text-sm text-neutral-300 italic leading-relaxed mb-6">
+          <div className="p-6 rounded-3xl app-glass-card flex flex-col justify-between">
+            <p className="text-xs sm:text-sm text-foreground/90 italic leading-relaxed mb-6">
               &quot;Met our AI startup co-founder at the Vesu Dev Mixer through CityCircle. Clean, verified, and zero spam.&quot;
             </p>
-            <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-              <div className="w-9 h-9 rounded-full bg-teal-400/20 text-teal-300 flex items-center justify-center font-bold text-xs">
+            <div className="flex items-center gap-3 pt-4 border-t border-border">
+              <div className="w-9 h-9 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs">
                 KB
               </div>
               <div>
-                <div className="text-xs font-bold text-white">Kavya B.</div>
-                <div className="text-[11px] text-neutral-400">Founder, Surat Tech Circle</div>
+                <div className="text-xs font-bold text-foreground">Kavya B.</div>
+                <div className="text-[11px] text-muted-foreground">Founder, Surat Tech Circle</div>
               </div>
             </div>
           </div>
 
-          <div className="p-6 rounded-3xl glass-panel flex flex-col justify-between">
-            <p className="text-xs sm:text-sm text-neutral-300 italic leading-relaxed mb-6">
+          <div className="p-6 rounded-3xl app-glass-card flex flex-col justify-between">
+            <p className="text-xs sm:text-sm text-foreground/90 italic leading-relaxed mb-6">
               &quot;The 300–500m location fuzzing gives complete peace of mind. Great for sunrise Dumas cycling squads.&quot;
             </p>
-            <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-              <div className="w-9 h-9 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-xs">
+            <div className="flex items-center gap-3 pt-4 border-t border-border">
+              <div className="w-9 h-9 rounded-full bg-accent/20 text-accent-foreground flex items-center justify-center font-bold text-xs">
                 AM
               </div>
               <div>
-                <div className="text-xs font-bold text-white">Aarav M.</div>
-                <div className="text-[11px] text-neutral-400">Lead, Weekend Trekkers</div>
+                <div className="text-xs font-bold text-foreground">Aarav M.</div>
+                <div className="text-[11px] text-muted-foreground">Lead, Weekend Trekkers</div>
               </div>
             </div>
           </div>
 
-          <div className="p-6 rounded-3xl glass-panel flex flex-col justify-between">
-            <p className="text-xs sm:text-sm text-neutral-300 italic leading-relaxed mb-6">
+          <div className="p-6 rounded-3xl app-glass-card flex flex-col justify-between">
+            <p className="text-xs sm:text-sm text-foreground/90 italic leading-relaxed mb-6">
               &quot;SVNIT college alumni badge makes professional networking credible without noisy WhatsApp clutter.&quot;
             </p>
-            <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-              <div className="w-9 h-9 rounded-full bg-teal-400/20 text-teal-300 flex items-center justify-center font-bold text-xs">
+            <div className="flex items-center gap-3 pt-4 border-t border-border">
+              <div className="w-9 h-9 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs">
                 MS
               </div>
               <div>
-                <div className="text-xs font-bold text-white">Dr. Meet S.</div>
-                <div className="text-[11px] text-neutral-400">SVNIT Alum & Researcher</div>
+                <div className="text-xs font-bold text-foreground">Dr. Meet S.</div>
+                <div className="text-[11px] text-muted-foreground">SVNIT Alum & Researcher</div>
               </div>
             </div>
           </div>
@@ -1113,13 +1093,13 @@ export default function LandingPage() {
       </section>
 
       {/* AEO INTERACTIVE FAQ */}
-      <section id="faq" className="py-16 md:py-24 px-4 sm:px-6 max-w-4xl mx-auto w-full border-t border-white/8">
+      <section id="faq" className="py-16 md:py-20 px-4 sm:px-6 max-w-4xl mx-auto w-full border-t border-border">
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <span className="text-xs font-bold text-teal-400 uppercase tracking-widest">Frequently Asked Questions</span>
-          <h2 className="text-2xl sm:text-4xl font-black font-heading text-white mt-1 mb-3">
+          <span className="text-xs font-bold text-primary uppercase tracking-widest">Frequently Asked Questions</span>
+          <h2 className="text-2xl sm:text-3xl font-bold font-heading text-foreground mt-1 mb-3">
             Everything You Need to Know
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-400">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Definitive answers for members and search engines.
           </p>
         </div>
@@ -1139,8 +1119,8 @@ export default function LandingPage() {
               onClick={() => setActiveFaqCategory(tab.id)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 activeFaqCategory === tab.id
-                  ? 'bg-teal-400 text-black shadow-md'
-                  : 'bg-white/5 text-neutral-400 hover:bg-white/10 hover:text-white'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'bg-muted/60 text-muted-foreground hover:bg-muted'
               }`}
             >
               {tab.label}
@@ -1155,20 +1135,20 @@ export default function LandingPage() {
             return (
               <div
                 key={idx}
-                className="rounded-2xl glass-panel overflow-hidden transition-all hover:border-teal-500/30"
+                className="rounded-2xl app-glass-card overflow-hidden transition-all hover:border-primary/40"
               >
                 <button
                   onClick={() => setExpandedFaq(isExpanded ? null : idx)}
-                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-white"
+                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-foreground"
                 >
                   <span>{faq.q}</span>
-                  <span className="p-1 rounded-lg bg-white/5 text-neutral-400 shrink-0">
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-teal-400" /> : <ChevronDown className="w-4 h-4" />}
+                  <span className="p-1 rounded-lg bg-muted text-muted-foreground shrink-0">
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-primary" /> : <ChevronDown className="w-4 h-4" />}
                   </span>
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 text-xs sm:text-sm text-neutral-400 leading-relaxed border-t border-white/8">
+                  <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/60">
                     {faq.a}
                   </div>
                 )}
@@ -1179,32 +1159,32 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="mt-auto border-t border-white/8 bg-[#05080A] py-10 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-neutral-400">
+      <footer className="mt-auto border-t border-border bg-card/60 py-10 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground">
           <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-            <div className="flex items-center gap-2 font-bold text-white">
-              <span className="w-6 h-6 rounded-lg bg-teal-400 text-black flex items-center justify-center font-black text-xs">
+            <div className="flex items-center gap-2 font-bold text-foreground">
+              <span className="w-6 h-6 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-black text-xs">
                 C
               </span>
               <span>CityCircle Surat</span>
             </div>
-            <span className="hidden sm:inline text-neutral-600">·</span>
+            <span className="hidden sm:inline">·</span>
             <span>Hyper-Local Verified Community Platform (v0.5.0)</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-            <Link href="/grievance" className="hover:text-teal-300 transition-colors underline">
+            <Link href="/grievance" className="hover:text-primary transition-colors underline">
               Grievance Officer (IT Rules 2021)
             </Link>
             <a
               href="/llms.txt"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-teal-300 transition-colors font-mono text-[11px] px-2 py-0.5 rounded bg-white/5 border border-white/10"
+              className="hover:text-primary transition-colors font-mono text-[11px] px-2 py-0.5 rounded bg-muted border border-border"
             >
               llms.txt (AI Knowledge)
             </a>
-            <Link href="/admin" className="hover:text-teal-300 transition-colors">
+            <Link href="/admin" className="hover:text-primary transition-colors">
               Admin Portal
             </Link>
           </div>
