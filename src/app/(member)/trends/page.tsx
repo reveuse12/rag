@@ -86,9 +86,11 @@ export default function TrendsPage() {
 
     fetchLiveTrends(currentCity.slug, selectedSort);
 
-    // Auto-poll fresh discussions every 90 seconds
+    // Auto-poll fresh discussions every 90 seconds (only when tab is active)
     const interval = setInterval(() => {
-      fetchLiveTrends(currentCity.slug, selectedSort, false);
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchLiveTrends(currentCity.slug, selectedSort, false);
+      }
     }, 90000);
 
     return () => clearInterval(interval);
