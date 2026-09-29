@@ -31,6 +31,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
 import { GroupCategory, Meetup } from '@/types';
 import { INITIAL_GROUPS, INITIAL_MEETUPS, CURRENT_USER } from '@/lib/data';
@@ -1088,26 +1089,24 @@ export default function InteractiveSuratMap() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold mb-1">Date & Time *</label>
-                  <input
-                    type="datetime-local"
-                    required
+                  <label className="block font-semibold mb-1 text-xs">Date & Time *</label>
+                  <DateTimePicker
                     value={hostDateTime}
-                    onChange={(e) => setHostDateTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-input bg-background text-xs"
+                    onChange={setHostDateTime}
+                    placeholder="Pick meetup date & time..."
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Capacity</label>
+                  <label className="block font-semibold mb-1 text-xs">Capacity</label>
                   <input
                     type="number"
                     min={5}
                     max={100}
                     value={hostCapacity}
                     onChange={(e) => setHostCapacity(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-input bg-background text-xs"
+                    className="w-full px-3.5 py-2 rounded-xl border border-input bg-background text-xs sm:text-sm font-semibold shadow-2xs focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>

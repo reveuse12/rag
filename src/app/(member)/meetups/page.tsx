@@ -19,6 +19,7 @@ import {
   Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Meetup, GroupCategory } from '@/types';
 import { INITIAL_MEETUPS, INITIAL_GROUPS, CURRENT_USER } from '@/lib/data';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
@@ -438,25 +439,24 @@ export default function MeetupsPage() {
                 <LocationPicker onSelect={handleLocationSelected} value={place} />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold mb-1">Date & Time *</label>
-                  <input
-                    type="datetime-local"
+                  <label className="block font-semibold mb-1 text-xs">Date & Time *</label>
+                  <DateTimePicker
                     value={dateTime}
-                    onChange={(e) => setDateTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-input bg-background text-xs"
+                    onChange={setDateTime}
+                    placeholder="Pick meetup date & time..."
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Max Capacity</label>
+                  <label className="block font-semibold mb-1 text-xs">Max Capacity</label>
                   <input
                     type="number"
                     min={5}
                     max={100}
                     value={capacity}
                     onChange={(e) => setCapacity(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-input bg-background text-xs"
+                    className="w-full px-3.5 py-2 rounded-xl border border-input bg-background text-xs sm:text-sm font-semibold shadow-2xs focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
