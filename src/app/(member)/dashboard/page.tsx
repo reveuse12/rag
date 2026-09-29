@@ -24,11 +24,41 @@ import { CATEGORY_CONFIG } from '@/lib/category-helpers';
 export default function DashboardPage() {
   const sponsor = INITIAL_SPONSOR_BANNERS[0];
   const [userName, setUserName] = React.useState(CURRENT_USER.display_name);
+  const [groups, setGroups] = React.useState(INITIAL_GROUPS);
+  const [meetups, setMeetups] = React.useState(INITIAL_MEETUPS);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('user_display_name');
       if (stored) setUserName(stored);
+
+      const storedMeetups = localStorage.getItem('cc_surat_meetups');
+      if (storedMeetups) {
+        try {
+          const parsed = JSON.parse(storedMeetups);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMeetups(parsed);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Sync custom member counts
+      setGroups((prev) =>
+        prev.map((g) => {
+          const customMembers = localStorage.getItem(`cc_group_members_${g.id}`);
+          if (customMembers) {
+            try {
+              const parsedMembers = JSON.parse(customMembers);
+              return { ...g, member_count: Math.max(1, parsedMembers.length) };
+            } catch (e) {
+              console.error(e);
+            }
+          }
+          return g;
+        })
+      );
     }
   }, []);
 
@@ -140,7 +170,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {INITIAL_GROUPS.slice(0, 4).map((group) => {
+            {groups.slice(0, 4).map((group) => {
               const cfg = CATEGORY_CONFIG[group.category];
               const Icon = cfg.icon;
               return (
@@ -158,7 +188,7 @@ export default function DashboardPage() {
                         <Icon className="w-3 h-3" style={{ color: cfg.color }} />
                         {group.category}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">{group.member_count} members</span>
+                      <span className="text-[10px] text-muted-foreground">{group.member_count} {group.member_count === 1 ? 'member' : 'members'}</span>
                     </div>
                     <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">
                       {group.name}
@@ -186,7 +216,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {INITIAL_MEETUPS[0] && (
+          {meetups[0] && (
             <div className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3">
               <div className="flex justify-between items-start gap-2">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-sm bg-accent/20 text-accent-foreground">
@@ -194,13 +224,13 @@ export default function DashboardPage() {
                 </span>
                 <span className="text-xs font-bold text-primary">FREE RSVP</span>
               </div>
-              <h3 className="font-bold text-sm text-foreground">{INITIAL_MEETUPS[0].title}</h3>
-              <p className="text-xs text-muted-foreground line-clamp-2">{INITIAL_MEETUPS[0].description}</p>
+              <h3 className="font-bold text-sm text-foreground">{meetups[0].title}</h3>
+              <p className="text-xs text-muted-foreground line-clamp-2">{meetups[0].description}</p>
               <div className="text-xs text-muted-foreground space-y-1 pt-1">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-primary" />
                   <span>
-                    {new Date(INITIAL_MEETUPS[0].date_time).toLocaleDateString('en-US', {
+                    {new Date(meetups[0].date_time).toLocaleDateString('en-US', {
                       weekday: 'short',
                       month: 'short',
                       day: 'numeric',
@@ -209,13 +239,13 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-primary" />
-                  <span className="truncate">{INITIAL_MEETUPS[0].place}</span>
+                  <span className="truncate">{meetups[0].place}</span>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-border flex items-center justify-between">
                 <span className="text-xs font-bold text-foreground">
-                  {INITIAL_MEETUPS[0].rsvps_count} / {INITIAL_MEETUPS[0].capacity} Going
+                  {meetups[0].rsvps_count || 0} / {meetups[0].capacity} Going
                 </span>
                 <Link href="/meetups">
                   <Button size="sm" className="bg-primary text-primary-foreground text-xs font-semibold h-7">

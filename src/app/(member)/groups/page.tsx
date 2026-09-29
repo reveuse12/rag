@@ -31,11 +31,7 @@ export default function GroupsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [joinedGroupIds, setJoinedGroupIds] = useState<string[]>([
-    'g-tech-surat',
-    'g-trekkers',
-    'g-foodies',
-  ]);
+  const [joinedGroupIds, setJoinedGroupIds] = useState<string[]>([]);
   const [requestedGroupIds, setRequestedGroupIds] = useState<string[]>([]);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 

@@ -52,6 +52,16 @@ interface ChatMessage {
   timestamp: string;
 }
 
+export interface CircleMember {
+  id: string;
+  name: string;
+  avatar: string;
+  role: 'Admin' | 'Member';
+  verified: boolean;
+  neighborhood?: string;
+  joined_at?: string;
+}
+
 interface JoinRequest {
   id: string;
   user_id: string;
@@ -63,27 +73,6 @@ interface JoinRequest {
 }
 
 const REACTION_EMOJIS = ['👍', '❤️', '🔥', '🚀', '😂', '🎉'];
-
-const SAMPLE_PENDING_REQUESTS: JoinRequest[] = [
-  {
-    id: 'req-1',
-    user_id: 'u-dhruv',
-    user_name: 'Dhruv Kothari',
-    user_avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
-    neighborhood: 'Vesu Main Road, Surat',
-    is_verified: true,
-    requested_at: '10m ago',
-  },
-  {
-    id: 'req-2',
-    user_id: 'u-ananya',
-    user_name: 'Ananya Desai',
-    user_avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
-    neighborhood: 'Piplod & SVNIT Area, Surat',
-    is_verified: true,
-    requested_at: '45m ago',
-  },
-];
 
 export default function GroupDetailPage() {
   const params = useParams();
@@ -109,8 +98,9 @@ export default function GroupDetailPage() {
   const [hasRequestedJoin, setHasRequestedJoin] = useState(false);
   const [showPinnedAnnouncement, setShowPinnedAnnouncement] = useState(true);
 
-  // Join Requests Queue State (WhatsApp "Approve New Participants")
-  const [pendingRequests, setPendingRequests] = useState<JoinRequest[]>(SAMPLE_PENDING_REQUESTS);
+  // Real Members & Join Requests State (0 fake data)
+  const [members, setMembers] = useState<CircleMember[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<JoinRequest[]>([]);
   const [requestActionSuccess, setRequestActionSuccess] = useState<string | null>(null);
 
   // Chat Reactions State: { [msgId]: { [emoji]: count } } & user's own reactions
@@ -137,7 +127,7 @@ export default function GroupDetailPage() {
     role: CURRENT_USER.role,
   });
 
-  // Load Group Settings, Active User and Joined State from localStorage
+  // Load Group Settings, Active User, Real Members, and Joined State from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedName = localStorage.getItem('user_display_name');
@@ -145,28 +135,91 @@ export default function GroupDetailPage() {
       const storedId = localStorage.getItem('user_id');
       const storedAvatar = localStorage.getItem('user_avatar');
 
+      const currentActiveUser = {
+        id: storedId || storedEmail || CURRENT_USER.id,
+        display_name: storedName || CURRENT_USER.display_name,
+        avatar_url:
+          storedAvatar ||
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+        is_verified: true,
+        role: CURRENT_USER.role,
+      };
+
       if (storedName) {
-        setActiveUser({
-          id: storedId || storedEmail || 'u-custom',
-          display_name: storedName,
-          avatar_url:
-            storedAvatar ||
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-          is_verified: true,
-          role: 'admin',
-        });
+        setActiveUser(currentActiveUser);
       }
 
       // Load persistent Group Settings
+      let currentGroup = initialGroup;
       const savedGroupSettings = localStorage.getItem(`cc_group_settings_${groupId}`);
       if (savedGroupSettings) {
         try {
           const parsed = JSON.parse(savedGroupSettings);
-          setGroup((prev) => ({ ...prev, ...parsed }));
+          currentGroup = { ...initialGroup, ...parsed };
+          setGroup(currentGroup);
         } catch (e) {
           console.error(e);
         }
       }
+
+      // Admin member entity (founding creator)
+      const adminMember: CircleMember = {
+        id: currentGroup.admin_id || 'a0000000-0000-0000-0000-000000000001',
+        name: `${currentGroup.admin_name}`,
+        avatar:
+          currentGroup.id === 'g-tech-surat'
+            ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+            : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+        role: 'Admin',
+        verified: true,
+        neighborhood: 'Surat (Creator)',
+        joined_at: 'Founder',
+      };
+
+      // Load persistent real circle members
+      const savedMembers = localStorage.getItem(`cc_group_members_${groupId}`);
+      let currentMemberList: CircleMember[] = [adminMember];
+      if (savedMembers) {
+        try {
+          const parsedList: CircleMember[] = JSON.parse(savedMembers);
+          if (Array.isArray(parsedList) && parsedList.length > 0) {
+            const hasAdmin = parsedList.some((m) => m.id === adminMember.id || m.role === 'Admin');
+            currentMemberList = hasAdmin ? parsedList : [adminMember, ...parsedList];
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Check if user is joined
+      const joinedList = localStorage.getItem('cc_joined_groups');
+      let isUserJoined = false;
+      if (joinedList) {
+        try {
+          const ids: string[] = JSON.parse(joinedList);
+          isUserJoined = ids.includes(groupId);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // If user is joined and not in currentMemberList, add them
+      if (isUserJoined && !currentMemberList.some((m) => m.id === currentActiveUser.id)) {
+        currentMemberList.push({
+          id: currentActiveUser.id,
+          name: currentActiveUser.display_name,
+          avatar: currentActiveUser.avatar_url,
+          role: 'Member',
+          verified: currentActiveUser.is_verified,
+          neighborhood: 'Surat Resident',
+          joined_at: 'Member',
+        });
+        localStorage.setItem(`cc_group_members_${groupId}`, JSON.stringify(currentMemberList));
+      }
+
+      setIsJoined(isUserJoined);
+      setMembers(currentMemberList);
+      setGroup((prev) => ({ ...prev, member_count: currentMemberList.length }));
 
       // Load persistent pending join requests
       const savedRequests = localStorage.getItem(`cc_group_requests_${groupId}`);
@@ -176,19 +229,8 @@ export default function GroupDetailPage() {
         } catch (e) {
           console.error(e);
         }
-      }
-
-      const joinedList = localStorage.getItem('cc_joined_groups');
-      if (joinedList) {
-        try {
-          const ids: string[] = JSON.parse(joinedList);
-          setIsJoined(ids.includes(groupId));
-        } catch (e) {
-          console.error(e);
-        }
       } else {
-        // Default seed joined
-        setIsJoined(['g-tech-surat', 'g-trekkers', 'g-foodies'].includes(groupId));
+        setPendingRequests([]);
       }
 
       // Check if user has requested join
@@ -231,9 +273,22 @@ export default function GroupDetailPage() {
       localStorage.setItem(`cc_group_requests_${groupId}`, JSON.stringify(updatedRequests));
     }
 
-    // Increment member count
-    const newCount = (group.member_count || 1) + 1;
-    saveGroupSettings({ member_count: newCount });
+    const approvedMember: CircleMember = {
+      id: request.user_id,
+      name: request.user_name,
+      avatar: request.user_avatar,
+      role: 'Member',
+      verified: request.is_verified,
+      neighborhood: request.neighborhood,
+      joined_at: 'Just now',
+    };
+
+    const updatedMembers = [...members.filter((m) => m.id !== request.user_id), approvedMember];
+    setMembers(updatedMembers);
+    saveGroupSettings({ member_count: updatedMembers.length });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`cc_group_members_${groupId}`, JSON.stringify(updatedMembers));
+    }
 
     setRequestActionSuccess(`✓ Approved ${request.user_name} into ${group.name}`);
     setTimeout(() => setRequestActionSuccess(null), 3500);
@@ -290,8 +345,13 @@ export default function GroupDetailPage() {
   const toggleJoin = () => {
     if (isJoined) {
       setIsJoined(false);
+      const updatedMembers = members.filter((m) => m.id !== activeUser.id);
+      setMembers(updatedMembers);
+      saveGroupSettings({ member_count: Math.max(1, updatedMembers.length) });
+
       if (typeof window !== 'undefined') {
         try {
+          localStorage.setItem(`cc_group_members_${groupId}`, JSON.stringify(updatedMembers));
           const stored = localStorage.getItem('cc_joined_groups');
           let ids: string[] = stored ? JSON.parse(stored) : [];
           ids = ids.filter((id) => id !== groupId);
@@ -305,7 +365,7 @@ export default function GroupDetailPage() {
 
     // Capacity Cap Limit Check (WhatsApp-style)
     const maxCap = group.max_members || 256;
-    const currentTotal = group.member_count || 1;
+    const currentTotal = members.length;
     if (currentTotal >= maxCap) {
       alert(`⚠️ This circle has reached its maximum capacity of ${maxCap} members. You have been added to the priority waitlist.`);
       return;
@@ -331,11 +391,11 @@ export default function GroupDetailPage() {
           user_id: activeUser.id,
           user_name: activeUser.display_name,
           user_avatar: activeUser.avatar_url,
-          neighborhood: 'Surat Resident (Vesu/Piplod)',
+          neighborhood: 'Surat Resident',
           is_verified: activeUser.is_verified,
           requested_at: 'Just now',
         };
-        const updatedReqs = [newReq, ...pendingRequests];
+        const updatedReqs = [newReq, ...pendingRequests.filter((r) => r.user_id !== activeUser.id)];
         setPendingRequests(updatedReqs);
         if (typeof window !== 'undefined') {
           localStorage.setItem(`cc_group_requests_${groupId}`, JSON.stringify(updatedReqs));
@@ -350,10 +410,24 @@ export default function GroupDetailPage() {
 
     // Direct Instant Join
     setIsJoined(true);
+    const newMember: CircleMember = {
+      id: activeUser.id,
+      name: `${activeUser.display_name}`,
+      avatar: activeUser.avatar_url,
+      role: 'Member',
+      verified: activeUser.is_verified,
+      neighborhood: 'Surat Resident',
+      joined_at: 'Just now',
+    };
+    const updatedMembers = [...members.filter((m) => m.id !== activeUser.id), newMember];
+    setMembers(updatedMembers);
+    saveGroupSettings({ member_count: updatedMembers.length });
+
     if (typeof window !== 'undefined') {
       try {
+        localStorage.setItem(`cc_group_members_${groupId}`, JSON.stringify(updatedMembers));
         const stored = localStorage.getItem('cc_joined_groups');
-        let ids: string[] = stored ? JSON.parse(stored) : ['g-tech-surat', 'g-trekkers', 'g-foodies'];
+        let ids: string[] = stored ? JSON.parse(stored) : [];
         if (!ids.includes(groupId)) ids.push(groupId);
         localStorage.setItem('cc_joined_groups', JSON.stringify(ids));
       } catch (e) {
@@ -593,7 +667,7 @@ export default function GroupDetailPage() {
   const config = CATEGORY_CONFIG[group.category];
   const CategoryIcon = config.icon;
   const maxCap = group.max_members || 256;
-  const currentMembers = (group.member_count || 1) + (isJoined ? 1 : 0);
+  const currentMembers = Math.max(1, members.length);
   const isFull = currentMembers >= maxCap && !isJoined;
   const inviteUrl = typeof window !== 'undefined' ? `${window.location.origin}/groups/${group.id}?invite=${group.invite_code || 'cc_join'}` : '';
 
@@ -1081,68 +1155,53 @@ export default function GroupDetailPage() {
                 Phone numbers and personal emails are hidden under strict PostgreSQL RLS.
               </p>
             </div>
-            {isJoined && (
+            {isJoined ? (
               <span className="px-2.5 py-1 rounded-full bg-success/15 text-success text-xs font-bold flex items-center gap-1 border border-success/30">
                 <CheckCircle2 className="w-3.5 h-3.5" /> You are a Member
               </span>
+            ) : (
+              <Button size="sm" onClick={toggleJoin} className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-8 px-3 rounded-xl">
+                Join Circle
+              </Button>
             )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {[
-              ...(isJoined
-                ? [
-                    {
-                      name: `${activeUser.display_name} (You)`,
-                      avatar: activeUser.avatar_url,
-                      role: 'Member',
-                      verified: activeUser.is_verified,
-                    },
-                  ]
-                : []),
-              {
-                name: `${group.admin_name} (Admin)`,
-                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-                role: 'Admin',
-                verified: true,
-              },
-              {
-                name: 'Aarav M.',
-                avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
-                role: 'Member',
-                verified: true,
-              },
-              {
-                name: 'Diya P.',
-                avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-                role: 'Member',
-                verified: true,
-              },
-              {
-                name: 'Rohan (SVNIT)',
-                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-                role: 'Member',
-                verified: true,
-              },
-              {
-                name: 'Meera S.',
-                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-                role: 'Member',
-                verified: true,
-              },
-            ].map((mbr, idx) => (
-              <div key={idx} className="p-3 rounded-xl bg-muted/40 border border-border flex items-center gap-3">
-                <img src={mbr.avatar} alt={mbr.name} className="w-9 h-9 rounded-full object-cover border border-border" />
-                <div className="truncate">
-                  <div className="font-bold text-xs flex items-center gap-1">
-                    <span className="truncate">{mbr.name}</span>
-                    {mbr.verified && <ShieldCheck className="w-3 h-3 text-primary shrink-0" />}
+            {members.map((mbr) => {
+              const isCurrentUser = mbr.id === activeUser.id;
+              return (
+                <div key={mbr.id} className="p-3.5 rounded-xl bg-muted/40 border border-border flex items-center gap-3">
+                  <img src={mbr.avatar} alt={mbr.name} className="w-9 h-9 rounded-full object-cover border border-border shrink-0" />
+                  <div className="truncate flex-1">
+                    <div className="font-bold text-xs flex items-center gap-1">
+                      <span className="truncate">
+                        {mbr.name} {isCurrentUser && !mbr.name.includes('(You)') ? '(You)' : ''}
+                      </span>
+                      {mbr.verified && <ShieldCheck className="w-3 h-3 text-primary shrink-0" />}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded ${
+                        mbr.role === 'Admin' ? 'bg-accent/20 text-accent font-bold' : 'text-muted-foreground'
+                      }`}>
+                        {mbr.role}
+                      </span>
+                      {mbr.neighborhood && (
+                        <span className="text-[10px] text-muted-foreground truncate">· {mbr.neighborhood}</span>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{mbr.role}</span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+
+          {members.length === 1 && !isJoined && (
+            <div className="p-4 rounded-xl bg-muted/30 border border-border/80 text-center space-y-2">
+              <p className="text-xs text-muted-foreground">
+                This circle currently has 1 founding admin. Click &apos;Join Circle&apos; above to participate.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

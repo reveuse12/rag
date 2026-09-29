@@ -43,9 +43,7 @@ export default function MeetupsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPassMeetup, setSelectedPassMeetup] = useState<Meetup | null>(null);
-  const [rsvpStates, setRsvpStates] = useState<Record<string, 'going' | 'maybe' | 'none'>>({
-    'm-ai-mixer': 'going',
-  });
+  const [rsvpStates, setRsvpStates] = useState<Record<string, 'going' | 'maybe' | 'none'>>({});
 
   // Host Meetup Form State
   const [title, setTitle] = useState('');
@@ -57,7 +55,7 @@ export default function MeetupsPage() {
   const [capacity, setCapacity] = useState(30);
   const [ticketPrice, setTicketPrice] = useState(0);
 
-  // Load custom meetups from localStorage on mount
+  // Load custom meetups and RSVPs from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('cc_surat_meetups');
@@ -67,6 +65,15 @@ export default function MeetupsPage() {
           if (Array.isArray(parsed) && parsed.length > 0) {
             setMeetups(parsed);
           }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      const storedRsvps = localStorage.getItem('cc_meetup_rsvps');
+      if (storedRsvps) {
+        try {
+          setRsvpStates(JSON.parse(storedRsvps));
         } catch (e) {
           console.error(e);
         }
@@ -91,10 +98,30 @@ export default function MeetupsPage() {
   });
 
   const handleRsvp = (meetupId: string, status: 'going' | 'maybe') => {
-    setRsvpStates((prev) => ({
-      ...prev,
-      [meetupId]: prev[meetupId] === status ? 'none' : status,
-    }));
+    const currentStatus = rsvpStates[meetupId] || 'none';
+    const nextStatus: 'going' | 'maybe' | 'none' = currentStatus === status ? 'none' : status;
+
+    const newStates: Record<string, 'going' | 'maybe' | 'none'> = {
+      ...rsvpStates,
+      [meetupId]: nextStatus,
+    };
+    setRsvpStates(newStates);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cc_meetup_rsvps', JSON.stringify(newStates));
+    }
+
+    // Update real RSVP count on meetup
+    const updated = meetups.map((m) => {
+      if (m.id === meetupId) {
+        let diff = 0;
+        if (currentStatus !== 'going' && nextStatus === 'going') diff = 1;
+        if (currentStatus === 'going' && nextStatus !== 'going') diff = -1;
+        return { ...m, rsvps_count: Math.max(0, (m.rsvps_count || 0) + diff) };
+      }
+      return m;
+    });
+    saveMeetups(updated);
   };
 
   const handleLocationSelected = (loc: SelectedLocation) => {
