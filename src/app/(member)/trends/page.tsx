@@ -42,8 +42,10 @@ export default function TrendsPage() {
   const { currentCity } = useCity();
   const [trends, setTrends] = useState<SocialTrend[]>(INITIAL_SURAT_TRENDS);
   const [loading, setLoading] = useState(false);
+  const [lastSynced, setLastSynced] = useState<string>('Just now');
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'instagram' | 'reddit' | 'bookmarked'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedSort, setSelectedSort] = useState<'hot' | 'new' | 'top' | 'comments'>('hot');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Interactive user state
@@ -82,23 +84,47 @@ export default function TrendsPage() {
       }
     }
 
-    fetchLiveTrends(currentCity.slug);
-  }, [currentCity.slug]);
+    fetchLiveTrends(currentCity.slug, selectedSort);
 
-  const fetchLiveTrends = async (citySlug: string = currentCity.slug) => {
-    setLoading(true);
+    // Auto-poll fresh discussions every 90 seconds
+    const interval = setInterval(() => {
+      fetchLiveTrends(currentCity.slug, selectedSort, false);
+    }, 90000);
+
+    return () => clearInterval(interval);
+  }, [currentCity.slug, selectedSort]);
+
+  const fetchLiveTrends = async (
+    citySlug: string = currentCity.slug,
+    sortBy: string = selectedSort,
+    showSpinner: boolean = true
+  ) => {
+    if (showSpinner) setLoading(true);
     try {
-      const res = await fetch(`/api/trends?city=${citySlug}`);
+      const res = await fetch(`/api/trends?city=${citySlug}&sort=${sortBy}`);
       if (res.ok) {
         const data = await res.json();
         if (data.trends && Array.isArray(data.trends)) {
-          setTrends(data.trends);
+          // Merge user-submitted local posts from localStorage
+          const savedCustom = localStorage.getItem(`cc_custom_trends_${citySlug}`);
+          let customPosts: SocialTrend[] = [];
+          if (savedCustom) {
+            try {
+              customPosts = JSON.parse(savedCustom);
+            } catch (e) {
+              console.error(e);
+            }
+          }
+
+          const combined = [...customPosts, ...data.trends];
+          setTrends(combined);
+          setLastSynced(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
         }
       }
     } catch (err) {
       console.warn('Using local fallback trends', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
@@ -154,14 +180,22 @@ export default function TrendsPage() {
       category: submitCategory,
       likes_count: 1,
       comments_count: 0,
-      posted_at: 'Just now by you',
+      posted_at: 'Just now',
       neighborhood: submitNeighborhood || `${currentCity.name} Metro`,
       is_verified_creator: true,
     };
 
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      const key = `cc_custom_trends_${currentCity.slug}`;
+      const saved = localStorage.getItem(key);
+      const list: SocialTrend[] = saved ? JSON.parse(saved) : [];
+      localStorage.setItem(key, JSON.stringify([newTrend, ...list]));
+    }
+
     setTrends([newTrend, ...trends]);
     setShowSubmitModal(false);
-    setToastMsg(`🎉 Trend submitted to ${currentCity.name} Local Pulse!`);
+    setToastMsg(`🎉 Live trend published to ${currentCity.name} Pulse!`);
     setTimeout(() => setToastMsg(null), 4000);
 
     // Reset
@@ -214,62 +248,72 @@ export default function TrendsPage() {
       <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-purple-900/30 via-primary/10 to-orange-500/10 border border-border p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-linear-to-r from-pink-500 to-rose-500 text-white text-[10px] font-black uppercase tracking-wider shadow-xs">
-                📸 Instagram Reels
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                Live Sync: {currentCity.subreddits[0] || 'r/local'}
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-600 text-white text-[10px] font-black uppercase tracking-wider shadow-xs">
-                💬 {currentCity.subreddits[0] || 'Reddit'}
-              </span>
+              <span className="text-[11px] text-muted-foreground">· Updated at {lastSynced}</span>
               <span className="text-xs font-bold text-muted-foreground ml-1">
                 {currentCity.flag} {currentCity.name}, {currentCity.country}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-foreground flex items-center gap-2">
-              {currentCity.name} Social Pulse & Trends <Flame className="w-6 h-6 text-orange-500 animate-pulse" />
+              {currentCity.name} Live Pulse & Trends <Flame className="w-6 h-6 text-orange-500 animate-pulse" />
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground max-w-xl">
-              Curated viral reels, hidden cafe discoveries, civic debates, and top Reddit discussions from across {currentCity.name} neighborhoods.
+              Real-time Reddit discussions, fresh Instagram food & cafe reels, and community updates curated for {currentCity.name}.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <Button
-              onClick={() => fetchLiveTrends(currentCity.slug)}
+              onClick={() => fetchLiveTrends(currentCity.slug, selectedSort, true)}
               variant="outline"
               disabled={loading}
               className="text-xs h-9 border-border bg-card hover:bg-muted"
             >
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
-              Refresh Feed
+              {loading ? 'Syncing...' : 'Sync Live'}
             </Button>
             <Button
               onClick={() => setShowSubmitModal(true)}
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 shadow-xs flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
-              Submit Trend
+              Submit Post
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Platform Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border">
+      {/* Sort & Filter Controls Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Platform Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border overflow-x-auto scrollbar-none">
           <button
             onClick={() => setSelectedPlatform('all')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               selectedPlatform === 'all'
                 ? 'bg-card text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            🔥 All Trends ({trends.length})
+            🔥 All ({trends.length})
+          </button>
+          <button
+            onClick={() => setSelectedPlatform('reddit')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              selectedPlatform === 'reddit'
+                ? 'bg-orange-600 text-white shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <span>💬</span> Reddit ({currentCity.subreddits[0] || 'r/local'})
           </button>
           <button
             onClick={() => setSelectedPlatform('instagram')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               selectedPlatform === 'instagram'
                 ? 'bg-linear-to-r from-purple-600 via-pink-600 to-rose-500 text-white shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -278,18 +322,8 @@ export default function TrendsPage() {
             <span>📸</span> Instagram Reels
           </button>
           <button
-            onClick={() => setSelectedPlatform('reddit')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              selectedPlatform === 'reddit'
-                ? 'bg-orange-600 text-white shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span>💬</span> Reddit (r/surat)
-          </button>
-          <button
             onClick={() => setSelectedPlatform('bookmarked')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               selectedPlatform === 'bookmarked'
                 ? 'bg-amber-500 text-white shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -299,16 +333,47 @@ export default function TrendsPage() {
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search posts, cafes, #locho..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-input bg-card text-xs focus:outline-hidden focus:ring-2 focus:ring-primary shadow-2xs"
-          />
+        {/* Sort & Search */}
+        <div className="flex items-center gap-2">
+          {/* Sort Selector */}
+          <div className="flex items-center bg-card border border-border rounded-xl p-1 text-xs">
+            <button
+              onClick={() => setSelectedSort('hot')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                selectedSort === 'hot' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              🔥 Hot
+            </button>
+            <button
+              onClick={() => setSelectedSort('new')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                selectedSort === 'new' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              ⚡ New
+            </button>
+            <button
+              onClick={() => setSelectedSort('comments')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                selectedSort === 'comments' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              💬 Discussed
+            </button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-56">
+            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search posts..."
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-input bg-card text-xs focus:outline-hidden focus:ring-2 focus:ring-primary shadow-2xs"
+            />
+          </div>
         </div>
       </div>
 
