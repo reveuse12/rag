@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -31,9 +31,12 @@ import {
   Sparkles,
   ArrowRight,
   MessageSquare,
+  Upload,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Group, Meetup } from '@/types';
+import { useCity } from '@/context/city-context';
 
 const AVAILABLE_TAGS = [
   'Tech', 'Startups', 'Food & Dining', 'Fitness', 'Photography',
@@ -41,35 +44,18 @@ const AVAILABLE_TAGS = [
   'Cycling', 'AI & ML', 'Finance', 'Design',
 ];
 
-const SURAT_NEIGHBORHOODS = [
-  'Vesu, Surat',
-  'Piplod, Surat',
-  'Adajan, Surat',
-  'Pal, Surat',
-  'Ghod Dod Road, Surat',
-  'SVNIT Campus, Surat',
-  'VIP Road, Surat',
-  'Varachha, Surat',
-  'Dumas Road, Surat',
-];
-
-const AVATAR_PRESETS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80',
-];
-
 export default function ProfilePage() {
   const router = useRouter();
+  const { currentCity } = useCity();
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
+  const modalFileInputRef = useRef<HTMLInputElement>(null);
 
   // Core Profile State
   const [user, setUser] = useState({
     id: 'user',
     email: '',
     display_name: 'Member',
-    avatar_url: AVATAR_PRESETS[0],
+    avatar_url: '',
     interest_tags: ['Tech', 'Startups', 'Food & Dining'],
     is_verified: true,
     is_founding_member: true,
@@ -84,8 +70,8 @@ export default function ProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState(user.display_name);
   const [editBio, setEditBio] = useState(user.bio || '');
-  const [editCity, setEditCity] = useState(user.city || 'Vesu, Surat');
-  const [editAvatarUrl, setEditAvatarUrl] = useState(user.avatar_url || AVATAR_PRESETS[0]);
+  const [editCity, setEditCity] = useState(user.city || `${currentCity.name}`);
+  const [editAvatarUrl, setEditAvatarUrl] = useState(user.avatar_url || '');
   const [editTags, setEditTags] = useState<string[]>(user.interest_tags);
   const [editAlumniBadge, setEditAlumniBadge] = useState<boolean>(!!user.college_email_badge);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,6 +91,7 @@ export default function ProfilePage() {
   const [rsvpdMeetupIds, setRsvpdMeetupIds] = useState<string[]>([]);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
   const [allMeetups, setAllMeetups] = useState<Meetup[]>([]);
+  const [myCreatedGroupIds, setMyCreatedGroupIds] = useState<string[]>([]);
 
   // Hydrate User Profile and dynamic groups from localStorage & API
   useEffect(() => {
@@ -141,6 +128,7 @@ export default function ProfilePage() {
           if (Array.isArray(data?.groups)) {
             const storedCustom = localStorage.getItem('cc_custom_groups');
             const customList: Group[] = storedCustom ? JSON.parse(storedCustom) : [];
+            setMyCreatedGroupIds(customList.map((g) => g.id));
             const apiIds = new Set(data.groups.map((g: Group) => g.id));
             const extraLocal = customList.filter((g) => !apiIds.has(g.id));
             setAllGroups([...data.groups, ...extraLocal]);
@@ -153,7 +141,7 @@ export default function ProfilePage() {
         .then((r) => r.json())
         .then((data) => {
           if (Array.isArray(data?.meetups)) {
-            const storedMeetups = localStorage.getItem('cc_surat_meetups');
+            const storedMeetups = localStorage.getItem(`cc_${currentCity?.slug || 'surat'}_meetups`) || localStorage.getItem('cc_surat_meetups');
             const localList: Meetup[] = storedMeetups ? JSON.parse(storedMeetups) : [];
             const apiIds = new Set(data.meetups.map((m: Meetup) => m.id));
             const extraLocal = localList.filter((m) => !apiIds.has(m.id));
@@ -174,31 +162,61 @@ export default function ProfilePage() {
         }));
 
         setEditDisplayName(storedName || user.display_name);
-        setEditAvatarUrl(storedAvatar || user.avatar_url || AVATAR_PRESETS[0]);
+        setEditAvatarUrl(storedAvatar || user.avatar_url || '');
         setEditBio(storedBio || user.bio || '');
         setEditCity(storedCity || user.city);
         if (storedTags) setEditTags(JSON.parse(storedTags));
       }
-
-      if (storedJoined) {
-        try {
-          setJoinedGroupIds(JSON.parse(storedJoined));
-        } catch {}
-      }
-
-      if (storedRsvps) {
-        try {
-          setRsvpdMeetupIds(JSON.parse(storedRsvps));
-        } catch {}
-      }
     }
-  }, []);
+  }, [currentCity?.slug]);
+
+  const handleFileUpload = (file: File, isDirectHero: boolean = false) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (PNG, JPG, WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      if (typeof reader.result === 'string') {
+        const dataUrl = reader.result;
+        if (isDirectHero) {
+          setUser((prev) => ({ ...prev, avatar_url: dataUrl }));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('user_avatar', dataUrl);
+          }
+          try {
+            await fetch('/api/profile/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...user,
+                avatar_url: dataUrl,
+              }),
+            });
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          setEditAvatarUrl(dataUrl);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleOpenEditModal = () => {
     setEditDisplayName(user.display_name);
     setEditBio(user.bio || '');
-    setEditCity(user.city || 'Vesu, Surat');
-    setEditAvatarUrl(user.avatar_url || AVATAR_PRESETS[0]);
+    setEditCity(user.city || `${currentCity.name}`);
+    setEditAvatarUrl(user.avatar_url || '');
     setEditTags([...user.interest_tags]);
     setEditAlumniBadge(!!user.college_email_badge);
     setSaveError(null);
@@ -241,14 +259,12 @@ export default function ProfilePage() {
     };
 
     try {
-      // 1. Call Backend API
-      const res = await fetch('/api/profile/update', {
+      await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      // 2. Sync to localStorage for immediate cross-page reactivity
       if (typeof window !== 'undefined') {
         localStorage.setItem('user_display_name', payload.display_name);
         localStorage.setItem('user_avatar', payload.avatar_url);
@@ -257,7 +273,6 @@ export default function ProfilePage() {
         localStorage.setItem('user_interest_tags', JSON.stringify(payload.interest_tags));
       }
 
-      // 3. Update React State
       setUser((prev) => ({
         ...prev,
         ...payload,
@@ -274,11 +289,74 @@ export default function ProfilePage() {
     }
   };
 
+  // Delete User's created Circle
+  const handleDeleteCircle = async (groupId: string, groupName: string) => {
+    if (!confirm(`Are you sure you want to permanently delete the circle "${groupName}"?`)) {
+      return;
+    }
+
+    try {
+      await fetch('/api/groups', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: groupId }),
+      });
+
+      if (typeof window !== 'undefined') {
+        const storedCustom = localStorage.getItem('cc_custom_groups');
+        if (storedCustom) {
+          const list: Group[] = JSON.parse(storedCustom);
+          const updated = list.filter((g) => g.id !== groupId);
+          localStorage.setItem('cc_custom_groups', JSON.stringify(updated));
+        }
+        const updatedJoined = joinedGroupIds.filter((id) => id !== groupId);
+        setJoinedGroupIds(updatedJoined);
+        localStorage.setItem('cc_joined_groups', JSON.stringify(updatedJoined));
+      }
+
+      setAllGroups((prev) => prev.filter((g) => g.id !== groupId));
+      alert(`Circle "${groupName}" was deleted.`);
+    } catch (e) {
+      console.error('Delete error:', e);
+    }
+  };
+
+  // Delete User's created Meetup
+  const handleDeleteMeetup = async (meetupId: string, meetupTitle: string) => {
+    if (!confirm(`Are you sure you want to delete the meetup "${meetupTitle}"?`)) {
+      return;
+    }
+
+    try {
+      await fetch('/api/meetups', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: meetupId }),
+      });
+
+      if (typeof window !== 'undefined') {
+        const key = `cc_${currentCity?.slug || 'surat'}_meetups`;
+        const stored = localStorage.getItem(key) || localStorage.getItem('cc_surat_meetups');
+        if (stored) {
+          const list: Meetup[] = JSON.parse(stored);
+          const updated = list.filter((m) => m.id !== meetupId);
+          localStorage.setItem(key, JSON.stringify(updated));
+          localStorage.setItem('cc_surat_meetups', JSON.stringify(updated));
+        }
+      }
+
+      setAllMeetups((prev) => prev.filter((m) => m.id !== meetupId));
+      alert(`Meetup "${meetupTitle}" was deleted.`);
+    } catch (e) {
+      console.error('Delete error:', e);
+    }
+  };
+
   // Download personal data export (IT Rules 2021 & Data Protection)
   const handleExportData = () => {
     const dataExport = {
       export_date: new Date().toISOString(),
-      platform: 'CityCircle Surat',
+      platform: 'CityCircle',
       user: {
         id: user.id,
         display_name: user.display_name,
@@ -322,10 +400,22 @@ export default function ProfilePage() {
   };
 
   const joinedGroups = allGroups.filter((g) => joinedGroupIds.includes(g.id));
-  const userMeetups = allMeetups.filter((m) => rsvpdMeetupIds.includes(m.id) || m.created_by === user.id);
+  const userMeetups = allMeetups.filter((m) => rsvpdMeetupIds.includes(m.id) || m.created_by === user.id || m.creator_name === user.display_name);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
+      {/* Hidden File Input for Direct Hero Avatar Upload */}
+      <input
+        type="file"
+        ref={heroFileInputRef}
+        accept="image/png, image/jpeg, image/webp, image/gif"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFileUpload(file, true);
+        }}
+        className="hidden"
+      />
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -333,7 +423,7 @@ export default function ProfilePage() {
             Member Profile & Settings
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Manage your verified identity, local circles, and privacy controls in Surat.
+            Manage your verified identity, local circles, and privacy controls in {currentCity.name}.
           </p>
         </div>
 
@@ -358,20 +448,29 @@ export default function ProfilePage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
-          {/* Avatar with Verified Ring */}
-          <div className="relative group">
-            <img
-              src={user.avatar_url}
-              alt={user.display_name}
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-2 border-primary/40 shadow-md ring-4 ring-primary/10"
-            />
+          {/* Avatar with Direct Click-to-Upload */}
+          <div className="relative group shrink-0">
+            {user.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user.display_name}
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-2 border-primary/40 shadow-md ring-4 ring-primary/10"
+              />
+            ) : (
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-primary/15 text-primary border-2 border-primary/40 shadow-md ring-4 ring-primary/10 flex items-center justify-center font-black text-3xl">
+                {user.display_name.charAt(0).toUpperCase()}
+              </div>
+            )}
+
             <button
-              onClick={handleOpenEditModal}
-              title="Change Avatar"
-              className="absolute inset-0 rounded-3xl bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+              onClick={() => heroFileInputRef.current?.click()}
+              title="Upload New Profile Photo"
+              className="absolute inset-0 rounded-3xl bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity cursor-pointer p-2 text-center"
             >
-              <Camera className="w-6 h-6" />
+              <Camera className="w-6 h-6 mb-1" />
+              <span className="text-[10px] font-bold">Upload Photo</span>
             </button>
+
             {user.is_verified && (
               <span
                 title="Verified Phone & Identity"
@@ -396,12 +495,12 @@ export default function ProfilePage() {
             </div>
 
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
-              {user.bio || 'Active member exploring events, tech mixers, and outdoor getaways in Surat.'}
+              {user.bio || 'Active member exploring events, tech mixers, and outdoor getaways.'}
             </p>
 
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-muted-foreground pt-0.5">
               <span className="flex items-center gap-1 font-medium text-foreground">
-                <MapPin className="w-3.5 h-3.5 text-primary" /> {user.city || 'Surat, Gujarat'}
+                <MapPin className="w-3.5 h-3.5 text-primary" /> {user.city || currentCity.name}
               </span>
               <span>·</span>
               <span>Joined {new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
@@ -416,7 +515,7 @@ export default function ProfilePage() {
               )}
               {user.college_email_badge && (
                 <span className="px-3 py-1 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 text-xs font-bold flex items-center gap-1.5">
-                  <GraduationCap className="w-3.5 h-3.5" /> SVNIT Alumni Network
+                  <GraduationCap className="w-3.5 h-3.5" /> Alumni Network
                 </span>
               )}
             </div>
@@ -430,11 +529,11 @@ export default function ProfilePage() {
             <div className="text-[11px] text-muted-foreground font-semibold">Circles Joined</div>
           </div>
           <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 text-center">
-            <div className="text-lg sm:text-xl font-black text-foreground">{userMeetups.length || 2}</div>
-            <div className="text-[11px] text-muted-foreground font-semibold">Meetups Attended</div>
+            <div className="text-lg sm:text-xl font-black text-foreground">{userMeetups.length || 1}</div>
+            <div className="text-[11px] text-muted-foreground font-semibold">Meetups Active</div>
           </div>
           <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 text-center">
-            <div className="text-lg sm:text-xl font-black text-primary">₹0</div>
+            <div className="text-lg sm:text-xl font-black text-primary">{currentCity.currencySymbol}0</div>
             <div className="text-[11px] text-muted-foreground font-semibold">Founding Pass Active</div>
           </div>
         </div>
@@ -470,7 +569,7 @@ export default function ProfilePage() {
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
-          <Calendar className="w-4 h-4" /> My Meetups ({userMeetups.length || 2})
+          <Calendar className="w-4 h-4" /> My Meetups ({userMeetups.length})
         </button>
         <button
           onClick={() => setActiveTab('privacy')}
@@ -487,7 +586,6 @@ export default function ProfilePage() {
       {/* TAB 1: Overview & Tags */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Interest Tags Card */}
           <div className="bg-card border border-border rounded-3xl p-6 space-y-4 shadow-xs">
             <div className="flex items-center justify-between">
               <div>
@@ -516,7 +614,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Privacy Protection Notice */}
           <div className="p-5 bg-card border border-border rounded-3xl flex items-start gap-3.5 text-xs text-muted-foreground shadow-xs">
             <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0 mt-0.5">
               <ShieldCheck className="w-5 h-5" />
@@ -524,7 +621,7 @@ export default function ProfilePage() {
             <div className="space-y-1">
               <h4 className="font-bold text-foreground text-sm">Protected Member Identity</h4>
               <p className="leading-relaxed">
-                Your email (<span className="text-foreground font-medium">{user.email}</span>) and phone number are locked behind PostgreSQL Row-Level Security. Other community members only see your chosen display name, avatar, and interest tags.
+                Your email (<span className="text-foreground font-medium">{user.email || 'Private'}</span>) and phone number are locked behind PostgreSQL Row-Level Security. Other community members only see your chosen display name, uploaded photo, and interest tags.
               </p>
             </div>
           </div>
@@ -544,33 +641,48 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {joinedGroups.map((grp) => (
-              <div key={grp.id} className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                      {grp.category}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" /> {grp.member_count} members
-                    </span>
+            {joinedGroups.map((grp) => {
+              const isMyCircle = myCreatedGroupIds.includes(grp.id) || grp.admin_id === user.id || grp.admin_name?.includes(user.display_name);
+              return (
+                <div key={grp.id} className="p-5 rounded-2xl bg-card border border-border shadow-xs space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                        {grp.category}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" /> {grp.member_count || 1} members
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-sm text-foreground">{grp.name}</h4>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{grp.description}</p>
                   </div>
-                  <h4 className="font-bold text-sm text-foreground">{grp.name}</h4>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{grp.description}</p>
-                </div>
 
-                <div className="pt-3 border-t border-border flex items-center justify-between">
-                  <span className="text-xs text-success font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Member Active
-                  </span>
-                  <Link href={`/groups/${grp.id}`}>
-                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold h-8">
-                      <MessageSquare className="w-3.5 h-3.5 mr-1" /> Open Chat
-                    </Button>
-                  </Link>
+                  <div className="pt-3 border-t border-border flex items-center justify-between">
+                    {isMyCircle ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteCircle(grp.id, grp.name)}
+                        className="text-danger hover:bg-danger/10 text-xs h-8 px-2.5"
+                        title="Delete this circle"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Circle
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-success font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Member Active
+                      </span>
+                    )}
+                    <Link href={`/groups/${grp.id}`}>
+                      <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold h-8">
+                        <MessageSquare className="w-3.5 h-3.5 mr-1" /> Open Chat
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -589,32 +701,46 @@ export default function ProfilePage() {
 
           <div className="space-y-3">
             {userMeetups.length > 0 ? (
-              userMeetups.map((m) => (
-                <div key={m.id} className="p-5 rounded-2xl bg-card border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-success/15 text-success">
-                        RSVP Confirmed
-                      </span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground">{new Date(m.date_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              userMeetups.map((m) => {
+                const isMyMeetup = m.created_by === user.id || m.creator_name === user.display_name || m.id.startsWith('m-');
+                return (
+                  <div key={m.id} className="p-5 rounded-2xl bg-card border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-success/15 text-success">
+                          {isMyMeetup ? 'Hosted by You' : 'RSVP Confirmed'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-xs text-muted-foreground">{new Date(m.date_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <h4 className="font-bold text-sm text-foreground">{m.title}</h4>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{m.place}</span>
+                      </p>
                     </div>
-                    <h4 className="font-bold text-sm text-foreground">{m.title}</h4>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <span>{m.place}</span>
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Link href="/map">
-                      <Button size="sm" variant="outline" className="text-xs h-8">
-                        <MapPin className="w-3.5 h-3.5 mr-1" /> View on Map
-                      </Button>
-                    </Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isMyMeetup && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteMeetup(m.id, m.title)}
+                          className="text-danger hover:bg-danger/10 text-xs h-8 px-2.5"
+                          title="Delete this meetup"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                        </Button>
+                      )}
+                      <Link href="/map">
+                        <Button size="sm" variant="outline" className="text-xs h-8">
+                          <MapPin className="w-3.5 h-3.5 mr-1" /> View on Map
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center py-8 rounded-2xl border border-dashed border-border bg-card/50">
                 <p className="text-xs text-muted-foreground">No upcoming meetup RSVPs yet.</p>
@@ -638,12 +764,12 @@ export default function ProfilePage() {
                   <span>300–500m Rough Location Sharing</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Allow other verified members to see your rough cluster on the Surat live map. Exact coordinates are never stored.
+                  Allow other verified members to see your rough cluster on the {currentCity.name} live map. Exact coordinates are never stored.
                 </p>
               </div>
               <button
                 onClick={() => setLocationSharing(!locationSharing)}
-                className={`w-12 h-6 rounded-full transition-colors relative p-1 ${
+                className={`w-12 h-6 rounded-full transition-colors relative p-1 cursor-pointer ${
                   locationSharing ? 'bg-primary' : 'bg-muted'
                 }`}
               >
@@ -663,12 +789,12 @@ export default function ProfilePage() {
                   <span>Real-Time Group Chat Alerts</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Receive browser notifications when someone mentions you or posts in your joined circles.
+                  Receive notifications when someone mentions you or posts in your joined circles.
                 </p>
               </div>
               <button
                 onClick={() => setChatNotifications(!chatNotifications)}
-                className={`w-12 h-6 rounded-full transition-colors relative p-1 ${
+                className={`w-12 h-6 rounded-full transition-colors relative p-1 cursor-pointer ${
                   chatNotifications ? 'bg-primary' : 'bg-muted'
                 }`}
               >
@@ -728,7 +854,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-foreground">Edit Member Profile</h3>
-                  <p className="text-xs text-muted-foreground">Update your identity and interests in Surat.</p>
+                  <p className="text-xs text-muted-foreground">Update your photo, identity, and interests in {currentCity.name}.</p>
                 </div>
               </div>
               <button
@@ -747,6 +873,76 @@ export default function ProfilePage() {
             )}
 
             <form onSubmit={handleSaveProfile} className="space-y-4">
+              {/* Direct Profile Photo Upload (No Presets, No URL input) */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-foreground">Profile Photo</label>
+                <input
+                  type="file"
+                  ref={modalFileInputRef}
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file, false);
+                  }}
+                  className="hidden"
+                />
+
+                <div className="flex items-center gap-4 p-3.5 bg-muted/40 rounded-2xl border border-border">
+                  <div className="relative group shrink-0">
+                    {editAvatarUrl ? (
+                      <img
+                        src={editAvatarUrl}
+                        alt="Avatar Preview"
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-primary shadow-xs ring-2 ring-primary/20"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground">
+                        <UserIcon className="w-8 h-8 opacity-40" />
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => modalFileInputRef.current?.click()}
+                      className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity cursor-pointer"
+                      title="Upload new image"
+                    >
+                      <Camera className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => modalFileInputRef.current?.click()}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 px-3"
+                      >
+                        <Upload className="w-3.5 h-3.5 mr-1" />
+                        {editAvatarUrl ? 'Change Photo' : 'Upload Photo'}
+                      </Button>
+
+                      {editAvatarUrl && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditAvatarUrl('')}
+                          className="text-danger hover:bg-danger/10 text-xs h-8 px-2.5"
+                          title="Remove photo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Remove
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      PNG, JPG, or WebP up to 5MB.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Display Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Display Name *</label>
@@ -775,44 +971,12 @@ export default function ProfilePage() {
               {/* Neighborhood / Area */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Neighborhood / Area</label>
-                <select
+                <input
+                  type="text"
                   value={editCity}
                   onChange={(e) => setEditCity(e.target.value)}
+                  placeholder={`e.g. ${currentCity.landmarks[0] || 'Vesu'}, ${currentCity.name}`}
                   className="w-full px-4 py-2 rounded-xl border border-input bg-background text-sm focus:outline-hidden focus:ring-2 focus:ring-primary"
-                >
-                  {SURAT_NEIGHBORHOODS.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Avatar Selector */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-foreground">Select Avatar</label>
-                <div className="flex items-center gap-3">
-                  {AVATAR_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setEditAvatarUrl(preset)}
-                      className={`relative rounded-2xl overflow-hidden border-2 transition-all ${
-                        editAvatarUrl === preset
-                          ? 'border-primary ring-2 ring-primary/30 scale-105'
-                          : 'border-border opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={preset} alt={`Avatar ${idx + 1}`} className="w-11 h-11 object-cover" />
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="url"
-                  value={editAvatarUrl}
-                  onChange={(e) => setEditAvatarUrl(e.target.value)}
-                  placeholder="Or paste custom image URL..."
-                  className="w-full px-3 py-1.5 rounded-xl border border-input bg-background text-xs focus:outline-hidden focus:ring-2 focus:ring-primary mt-1"
                 />
               </div>
 
@@ -848,7 +1012,7 @@ export default function ProfilePage() {
                 <div className="space-y-0.5">
                   <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <GraduationCap className="w-4 h-4 text-indigo-500" />
-                    <span>SVNIT & University Alumni Badge</span>
+                    <span>University & Alumni Network Badge</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground">Display verified alumni status on profile & chats.</p>
                 </div>

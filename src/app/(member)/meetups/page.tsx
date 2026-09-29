@@ -17,6 +17,7 @@ import {
   X,
   ShieldCheck,
   Download,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -239,6 +240,70 @@ export default function MeetupsPage() {
     setTicketPrice(0);
   };
 
+  const isUserMeetupOwner = (meetup: Meetup) => {
+    if (typeof window === 'undefined') return false;
+    const currentUserId = localStorage.getItem('user_id');
+    const currentUserName = localStorage.getItem('user_display_name');
+    if (meetup.id.startsWith('m-')) return true;
+    if (currentUserId && meetup.created_by === currentUserId) return true;
+    if (meetup.creator_name?.includes('(You)') || (currentUserName && meetup.creator_name === currentUserName)) return true;
+    const stored = localStorage.getItem('cc_surat_meetups');
+    if (stored) {
+      try {
+        const list: Meetup[] = JSON.parse(stored);
+        if (list.some((m) => m.id === meetup.id)) return true;
+      } catch {}
+    }
+    return false;
+  };
+
+  const handleDeleteMeetup = async (meetupId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (!confirm('Are you sure you want to delete this meetup? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await fetch('/api/meetups', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: meetupId }),
+      });
+    } catch (err) {
+      console.error('Error deleting meetup:', err);
+    }
+
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('cc_surat_meetups');
+      if (stored) {
+        try {
+          const list: Meetup[] = JSON.parse(stored);
+          const updated = list.filter((m) => m.id !== meetupId);
+          localStorage.setItem('cc_surat_meetups', JSON.stringify(updated));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      // Clean up RSVP state
+      const savedRsvps = localStorage.getItem('cc_meetup_rsvps');
+      if (savedRsvps) {
+        try {
+          const rsvps = JSON.parse(savedRsvps);
+          delete rsvps[meetupId];
+          localStorage.setItem('cc_meetup_rsvps', JSON.stringify(rsvps));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    setMeetups((prev) => prev.filter((m) => m.id !== meetupId));
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -443,7 +508,19 @@ export default function MeetupsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  {isUserMeetupOwner(meetup) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      title="Delete this Meetup"
+                      onClick={(e) => handleDeleteMeetup(meetup.id, e)}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+
                   {rsvpState === 'going' && (
                     <Button
                       size="sm"

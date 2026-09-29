@@ -34,6 +34,7 @@ import {
   QrCode,
   ShieldAlert,
   Check,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Group, Meetup, SponsorBanner } from '@/types';
@@ -341,6 +342,62 @@ export default function GroupDetailPage() {
     const newCode = `cc_surat_${Math.random().toString(36).substring(2, 9)}`;
     saveGroupSettings({ invite_code: newCode });
     setCopiedLink(false);
+  };
+
+  const [isDeletingGroup, setIsDeletingGroup] = useState(false);
+
+  const isCreatorOrAdmin =
+    activeUser.role === 'admin' ||
+    group.admin_id === activeUser.id ||
+    group.admin_name?.includes('(You)') ||
+    group.admin_name === activeUser.display_name ||
+    groupId.startsWith('g-custom-');
+
+  const handleDeleteGroup = async () => {
+    if (!confirm(`Are you sure you want to permanently delete "${group.name}"? All group messages, member records, and settings will be permanently erased.`)) {
+      return;
+    }
+
+    setIsDeletingGroup(true);
+    try {
+      await fetch('/api/groups', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: groupId }),
+      });
+    } catch (err) {
+      console.error('Error deleting group:', err);
+    }
+
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('cc_custom_groups');
+      if (stored) {
+        try {
+          const customList: Group[] = JSON.parse(stored);
+          const updated = customList.filter((g) => g.id !== groupId);
+          localStorage.setItem('cc_custom_groups', JSON.stringify(updated));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const joined = localStorage.getItem('cc_joined_groups');
+      if (joined) {
+        try {
+          const joinedList: string[] = JSON.parse(joined);
+          const updatedJoined = joinedList.filter((id) => id !== groupId);
+          localStorage.setItem('cc_joined_groups', JSON.stringify(updatedJoined));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      localStorage.removeItem(`cc_group_settings_${groupId}`);
+      localStorage.removeItem(`cc_group_members_${groupId}`);
+      localStorage.removeItem(`cc_group_chat_${groupId}`);
+      localStorage.removeItem(`cc_group_requests_${groupId}`);
+      localStorage.removeItem(`cc_chat_reactions_${groupId}`);
+    }
+
+    router.push('/groups');
   };
 
   const handleToggleReaction = (msgId: string, emoji: string) => {
@@ -1434,6 +1491,39 @@ export default function GroupDetailPage() {
                   </Button>
                 </div>
               </div>
+
+              {/* Danger Zone: Delete Circle (Visible to Creator / Admin) */}
+              {isCreatorOrAdmin && (
+                <div className="p-4 bg-destructive/5 rounded-xl border border-destructive/20 space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="font-bold text-destructive flex items-center gap-1.5 text-sm">
+                        <Trash2 className="w-4 h-4" /> Danger Zone: Delete Circle
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Permanently dissolve this circle. All chat messages, active invites, and member records will be permanently removed.
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={isDeletingGroup}
+                      onClick={handleDeleteGroup}
+                      className="shrink-0 text-xs font-bold"
+                    >
+                      {isDeletingGroup ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Circle
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

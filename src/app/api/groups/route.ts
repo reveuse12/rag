@@ -96,3 +96,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { id } = body;
+    if (!id) {
+      return NextResponse.json({ error: 'Group ID is required' }, { status: 400 });
+    }
+
+    try {
+      const supabase = await createClient();
+      await supabase.from('groups').delete().eq('id', id);
+      await supabase.from('group_members').delete().eq('group_id', id);
+    } catch (dbErr) {
+      console.warn('Supabase delete group warning:', dbErr);
+    }
+
+    return NextResponse.json({ success: true, message: 'Group deleted successfully' });
+  } catch (error) {
+    console.error('Error in DELETE /api/groups:', error);
+    return NextResponse.json({ error: 'Failed to delete group' }, { status: 500 });
+  }
+}
+

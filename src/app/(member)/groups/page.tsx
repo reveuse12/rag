@@ -18,6 +18,7 @@ import {
   MessageSquare,
   ChevronRight,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Group, GroupCategory, SponsorBanner } from '@/types';
@@ -201,6 +202,73 @@ export default function GroupsPage() {
     setRequireApproval(false);
     setOnlyAdminsMessage(false);
     setVerifiedOnly(false);
+  };
+
+  const isUserOwnedGroup = (group: Group) => {
+    if (typeof window === 'undefined') return false;
+    const currentUserId = localStorage.getItem('user_id');
+    const currentUserName = localStorage.getItem('user_display_name');
+    if (group.id.startsWith('g-custom-')) return true;
+    if (currentUserId && group.admin_id === currentUserId) return true;
+    if (group.admin_name?.includes('(You)') || (currentUserName && group.admin_name === currentUserName)) return true;
+    const customListStr = localStorage.getItem('cc_custom_groups');
+    if (customListStr) {
+      try {
+        const customList: Group[] = JSON.parse(customListStr);
+        if (customList.some((g) => g.id === group.id)) return true;
+      } catch {}
+    }
+    return false;
+  };
+
+  const handleDeleteGroup = async (e: React.MouseEvent, groupToDelete: Group) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!confirm(`Are you sure you want to delete "${groupToDelete.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await fetch('/api/groups', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: groupToDelete.id }),
+      });
+    } catch (err) {
+      console.error('Error deleting group:', err);
+    }
+
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('cc_custom_groups');
+      if (stored) {
+        try {
+          const customList: Group[] = JSON.parse(stored);
+          const updated = customList.filter((g) => g.id !== groupToDelete.id);
+          localStorage.setItem('cc_custom_groups', JSON.stringify(updated));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const joined = localStorage.getItem('cc_joined_groups');
+      if (joined) {
+        try {
+          const joinedList: string[] = JSON.parse(joined);
+          const updatedJoined = joinedList.filter((id) => id !== groupToDelete.id);
+          localStorage.setItem('cc_joined_groups', JSON.stringify(updatedJoined));
+          setJoinedGroupIds(updatedJoined);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      localStorage.removeItem(`cc_group_settings_${groupToDelete.id}`);
+      localStorage.removeItem(`cc_group_members_${groupToDelete.id}`);
+      localStorage.removeItem(`cc_group_chat_${groupToDelete.id}`);
+    }
+
+    setGroups((prev) => prev.filter((g) => g.id !== groupToDelete.id));
+    setNotificationMsg(`Circle "${groupToDelete.name}" deleted successfully.`);
+    setTimeout(() => setNotificationMsg(null), 3000);
   };
 
   const [sponsorBanner, setSponsorBanner] = useState<SponsorBanner | null>(null);
@@ -443,7 +511,19 @@ export default function GroupsPage() {
                     Admin: {group.admin_name}
                   </span>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    {isUserOwnedGroup(group) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title="Delete this Circle"
+                        onClick={(e) => handleDeleteGroup(e, group)}
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+
                     <Button
                       size="sm"
                       variant={isMember ? 'outline' : isRequested ? 'secondary' : 'default'}

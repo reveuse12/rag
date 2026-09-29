@@ -119,3 +119,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { id } = body;
+    if (!id) {
+      return NextResponse.json({ error: 'Meetup ID is required' }, { status: 400 });
+    }
+
+    try {
+      const supabase = await createClient();
+      await supabase.from('meetups').delete().eq('id', id);
+      await supabase.from('rsvps').delete().eq('meetup_id', id);
+    } catch (dbErr) {
+      console.warn('Supabase delete meetup warning:', dbErr);
+    }
+
+    return NextResponse.json({ success: true, message: 'Meetup deleted successfully' });
+  } catch (error) {
+    console.error('Error in DELETE /api/meetups:', error);
+    return NextResponse.json({ error: 'Failed to delete meetup' }, { status: 500 });
+  }
+}
+

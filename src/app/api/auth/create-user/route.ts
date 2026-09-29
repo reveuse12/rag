@@ -5,7 +5,7 @@ import { supabaseConfig } from '@/lib/supabase/config';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, display_name, interest_tags, founding_code, password } = await request.json();
+    const { email, display_name, interest_tags, founding_code, password, avatar_url } = await request.json();
 
     if (!email || !display_name || !interest_tags || interest_tags.length < 3) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       email: email.trim().toLowerCase(),
       password: password || undefined,
       email_confirm: true,
-      user_metadata: { display_name: display_name.trim() },
+      user_metadata: { display_name: display_name.trim(), avatar_url: avatar_url || undefined },
     });
 
     if (authError) {
@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
       id: userId,
       email: email.trim().toLowerCase(),
       display_name: display_name.trim(),
+      avatar_url: avatar_url || undefined,
       interest_tags,
       is_verified: isFoundingMember, // Founding members are auto-verified
       city: process.env.NEXT_PUBLIC_CITY || 'Surat',

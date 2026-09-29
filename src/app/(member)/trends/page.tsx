@@ -23,18 +23,19 @@ import {
   Layers,
   ShieldCheck,
   X,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SocialTrend, TrendCategory, TrendPlatform } from '@/types';
 import { useCity } from '@/context/city-context';
 
-const TREND_CATEGORIES: { label: string; value: string; emoji: string }[] = [
-  { label: 'All Topics', value: 'all', emoji: '🌟' },
-  { label: 'Food & Cafes', value: 'Food & Cafes', emoji: '🍜' },
-  { label: 'Tech & Startups', value: 'Tech & Startups', emoji: '🚀' },
-  { label: 'Events & Nightlife', value: 'Events & Nightlife', emoji: '🌙' },
-  { label: 'Civic & Infrastructure', value: 'Civic & Infrastructure', emoji: '🏗️' },
-  { label: 'Culture & Gems', value: 'Culture & Gems', emoji: '💎' },
+const TREND_CATEGORIES: { label: string; value: string }[] = [
+  { label: 'All Topics', value: 'all' },
+  { label: 'Food & Cafes', value: 'Food & Cafes' },
+  { label: 'Tech & Startups', value: 'Tech & Startups' },
+  { label: 'Events & Nightlife', value: 'Events & Nightlife' },
+  { label: 'Civic & Infrastructure', value: 'Civic & Infrastructure' },
+  { label: 'Culture & Gems', value: 'Culture & Gems' },
 ];
 
 export default function TrendsPage() {
@@ -161,21 +162,69 @@ export default function TrendsPage() {
   };
 
   const handleShareToWhatsApp = (trend: SocialTrend) => {
-    const text = `🔥 Check out this trending ${currentCity.name} post on CityCircle: "${trend.title}"\n\nRead more: ${trend.source_url}`;
+    const text = `Check out this trending ${currentCity.name} post on CityCircle: "${trend.title}"\n\nRead more: ${trend.source_url}`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 
+  const isUserTrend = (trend: SocialTrend) => {
+    if (typeof window === 'undefined') return false;
+    if (trend.id.startsWith('trend-user-')) return true;
+    const currentUserName = localStorage.getItem('user_display_name');
+    if (currentUserName && (trend.author_name === currentUserName || trend.author_handle === `@${currentUserName}`)) return true;
+    const key = `cc_custom_trends_${currentCity.slug}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        const list: SocialTrend[] = JSON.parse(saved);
+        if (list.some((t) => t.id === trend.id)) return true;
+      } catch {}
+    }
+    return false;
+  };
+
+  const handleDeleteTrend = (trendId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      const key = `cc_custom_trends_${currentCity.slug}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try {
+          const list: SocialTrend[] = JSON.parse(saved);
+          const updated = list.filter((t) => t.id !== trendId);
+          localStorage.setItem(key, JSON.stringify(updated));
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
+
+    setTrends((prev) => prev.filter((t) => t.id !== trendId));
+    setToastMsg('Submission deleted successfully.');
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
   const handleSubmitTrend = (e: React.FormEvent) => {
     e.preventDefault();
+    const storedName = typeof window !== 'undefined' ? localStorage.getItem('user_display_name') : null;
+    const storedAvatar = typeof window !== 'undefined' ? localStorage.getItem('user_avatar') : null;
+
     const newTrend: SocialTrend = {
       id: `trend-user-${Date.now()}`,
       platform: submitPlatform,
       title: submitTitle,
       content: submitContent,
-      author_name: submitPlatform === 'instagram' ? `${currentCity.name} Resident` : 'u/local_citizen',
-      author_handle: submitPlatform === 'instagram' ? `@${currentCity.slug}_creator` : 'u/local_citizen',
-      author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+      author_name: storedName || (submitPlatform === 'instagram' ? `${currentCity.name} Resident` : 'u/local_citizen'),
+      author_handle: storedName ? `@${storedName.toLowerCase().replace(/\s+/g, '_')}` : (submitPlatform === 'instagram' ? `@${currentCity.slug}_creator` : 'u/local_citizen'),
+      author_avatar: storedAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
       source_url: submitUrl || `https://reddit.com/${currentCity.subreddits[0] || 'r/all'}`,
       subreddit: submitPlatform === 'reddit' ? currentCity.subreddits[0] || 'r/all' : undefined,
       category: submitCategory,
@@ -196,7 +245,7 @@ export default function TrendsPage() {
 
     setTrends([newTrend, ...trends]);
     setShowSubmitModal(false);
-    setToastMsg(`🎉 Live trend published to ${currentCity.name} Pulse!`);
+    setToastMsg(`Live trend published to ${currentCity.name} Pulse!`);
     setTimeout(() => setToastMsg(null), 4000);
 
     // Reset
@@ -300,7 +349,7 @@ export default function TrendsPage() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            🔥 All ({trends.length})
+            All ({trends.length})
           </button>
           <button
             onClick={() => setSelectedPlatform('reddit')}
@@ -310,7 +359,7 @@ export default function TrendsPage() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span>💬</span> Reddit ({currentCity.subreddits[0] || 'r/local'})
+            Reddit ({currentCity.subreddits[0] || 'r/local'})
           </button>
           <button
             onClick={() => setSelectedPlatform('instagram')}
@@ -320,7 +369,7 @@ export default function TrendsPage() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span>📸</span> Instagram Reels
+            Instagram
           </button>
           <button
             onClick={() => setSelectedPlatform('bookmarked')}
@@ -330,7 +379,7 @@ export default function TrendsPage() {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span>⭐</span> Saved ({bookmarkedTrendIds.length})
+            Saved ({bookmarkedTrendIds.length})
           </button>
         </div>
 
@@ -344,7 +393,7 @@ export default function TrendsPage() {
                 selectedSort === 'hot' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              🔥 Hot
+              Hot
             </button>
             <button
               onClick={() => setSelectedSort('new')}
@@ -352,7 +401,7 @@ export default function TrendsPage() {
                 selectedSort === 'new' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              ⚡ New
+              New
             </button>
             <button
               onClick={() => setSelectedSort('comments')}
@@ -360,7 +409,7 @@ export default function TrendsPage() {
                 selectedSort === 'comments' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              💬 Discussed
+              Discussed
             </button>
           </div>
 
@@ -392,7 +441,6 @@ export default function TrendsPage() {
                   : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
               }`}
             >
-              <span>{cat.emoji}</span>
               <span>{cat.label}</span>
             </button>
           );
@@ -550,6 +598,17 @@ export default function TrendsPage() {
                   </div>
 
                   <div className="flex items-center gap-1.5">
+                    {/* Delete button for user's own submissions */}
+                    {isUserTrend(trend) && (
+                      <button
+                        onClick={(e) => handleDeleteTrend(trend.id, e)}
+                        className="p-1.5 rounded-lg border border-border/60 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Delete your submission"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
                     {/* Bookmark */}
                     <button
                       onClick={() => handleBookmark(trend.id)}
@@ -595,10 +654,10 @@ export default function TrendsPage() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-orange-500/15 text-orange-600 flex items-center justify-center font-bold">
-                  🔥
+                  <Flame className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold font-heading text-foreground">Submit a Surat Trend</h2>
+                  <h2 className="text-lg sm:text-xl font-bold font-heading text-foreground">Submit a {currentCity.name} Trend</h2>
                   <p className="text-[11px] text-muted-foreground">Share viral Instagram reels, local food spots, or Reddit threads.</p>
                 </div>
               </div>
@@ -624,7 +683,7 @@ export default function TrendsPage() {
                         : 'bg-background border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    <span>📸</span> Instagram Reel / Post
+                    Instagram Reel / Post
                   </button>
                   <button
                     type="button"
@@ -635,7 +694,7 @@ export default function TrendsPage() {
                         : 'bg-background border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    <span>💬</span> Reddit (r/surat)
+                    Reddit ({currentCity.subreddits[0] || 'r/local'})
                   </button>
                 </div>
               </div>
