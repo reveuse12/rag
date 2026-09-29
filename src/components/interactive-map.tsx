@@ -33,7 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
 import { GroupCategory, Meetup } from '@/types';
-import { INITIAL_GROUPS, CURRENT_USER } from '@/lib/data';
+import { INITIAL_GROUPS, INITIAL_MEETUPS, CURRENT_USER } from '@/lib/data';
 
 export interface MapVenue {
   id: string;
@@ -103,10 +103,18 @@ export default function InteractiveSuratMap() {
       const savedMeetups = localStorage.getItem('cc_surat_meetups');
       if (savedMeetups) {
         try {
-          setMeetups(JSON.parse(savedMeetups));
+          const parsed = JSON.parse(savedMeetups);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMeetups(parsed);
+          } else {
+            setMeetups(INITIAL_MEETUPS);
+          }
         } catch (e) {
           console.error(e);
+          setMeetups(INITIAL_MEETUPS);
         }
+      } else {
+        setMeetups(INITIAL_MEETUPS);
       }
     }
   }, []);
@@ -329,19 +337,24 @@ export default function InteractiveSuratMap() {
 
       // 2. Render Live Hosted Meetups on Map (Glowing Amber/Primary Beacons)
       meetups.forEach((meetup, idx) => {
-        // Approximate or extract coords if available
-        let mLat = 21.1550 + (idx * 0.008 * (idx % 2 === 0 ? 1 : -1));
-        let mLng = 72.7800 + (idx * 0.006 * (idx % 3 === 0 ? 1 : -1));
+        // Use EXACT persisted latitude and longitude
+        let mLat: number = typeof meetup.latitude === 'number' && !isNaN(meetup.latitude) ? meetup.latitude : 0;
+        let mLng: number = typeof meetup.longitude === 'number' && !isNaN(meetup.longitude) ? meetup.longitude : 0;
 
-        if (meetup.place.toLowerCase().includes('vesu') || meetup.place.toLowerCase().includes('piplod')) {
-          mLat = 21.1450 + (idx * 0.003);
-          mLng = 72.7780 + (idx * 0.002);
-        } else if (meetup.place.toLowerCase().includes('svnit') || meetup.place.toLowerCase().includes('icchanath')) {
-          mLat = 21.1645;
-          mLng = 72.7845;
-        } else if (meetup.place.toLowerCase().includes('dumas')) {
-          mLat = 21.0850;
-          mLng = 72.7050;
+        if (!mLat || !mLng) {
+          if (meetup.place?.toLowerCase().includes('vesu') || meetup.place?.toLowerCase().includes('piplod')) {
+            mLat = 21.1418;
+            mLng = 72.7756;
+          } else if (meetup.place?.toLowerCase().includes('svnit') || meetup.place?.toLowerCase().includes('icchanath')) {
+            mLat = 21.1645;
+            mLng = 72.7845;
+          } else if (meetup.place?.toLowerCase().includes('dumas')) {
+            mLat = 21.0850;
+            mLng = 72.7050;
+          } else {
+            mLat = 21.1550 + (idx * 0.003);
+            mLng = 72.7800 + (idx * 0.003);
+          }
         }
 
         const cfg = CATEGORY_CONFIG[meetup.category || 'Custom'];
@@ -603,7 +616,9 @@ export default function InteractiveSuratMap() {
       id: `m-map-${Date.now()}`,
       title: hostTitle.trim() || 'Surat Community Meetup',
       description: hostDescription.trim() || 'Gathering hosted directly from Surat Live Map.',
-      place: selectedItem?.title ? `${selectedItem.title} · ${pickedCoords.address.split(',')[0]}` : pickedCoords.address,
+      place: selectedItem?.title && !selectedItem?.isMeetup ? `${selectedItem.title} · ${pickedCoords.address.split(',')[0]}` : pickedCoords.address,
+      latitude: pickedCoords.lat,
+      longitude: pickedCoords.lng,
       date_time: hostDateTime || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
       group_id: hostGroupId,
       group_name: group.name,

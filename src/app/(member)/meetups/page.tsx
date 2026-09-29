@@ -118,6 +118,8 @@ export default function MeetupsPage() {
       title,
       description,
       place,
+      latitude: venueCoordinates?.lat || 21.1550,
+      longitude: venueCoordinates?.lng || 72.7800,
       date_time: dateTime || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
       group_id: groupId,
       group_name: group?.name || 'Surat Circle',
