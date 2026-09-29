@@ -118,17 +118,17 @@ export default function InteractiveSuratMap() {
       if (savedMeetups) {
         try {
           const parsed = JSON.parse(savedMeetups);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed)) {
             setMeetups(parsed);
           } else {
-            setMeetups(INITIAL_MEETUPS);
+            setMeetups([]);
           }
         } catch (e) {
           console.error(e);
-          setMeetups(INITIAL_MEETUPS);
+          setMeetups([]);
         }
       } else {
-        setMeetups(INITIAL_MEETUPS);
+        setMeetups([]);
       }
     }
   }, []);

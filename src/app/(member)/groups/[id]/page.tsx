@@ -100,7 +100,7 @@ export default function GroupDetailPage() {
   };
 
   const initialGroup = INITIAL_GROUPS.find((g) => g.id === groupId) || fallbackGroup;
-  const groupMeetups = INITIAL_MEETUPS.filter((m) => m.group_id === initialGroup.id);
+  const [groupMeetups, setGroupMeetups] = useState<Meetup[]>([]);
   const sponsorBanner = INITIAL_SPONSOR_BANNERS.find(
     (b) => b.placement === 'group' && (b.target_id === initialGroup.id || !b.target_id)
   ) || INITIAL_SPONSOR_BANNERS[0];
@@ -113,6 +113,21 @@ export default function GroupDetailPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [reportReason, setReportReason] = useState('');
+
+  // Sync group meetups from storage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedMeetups = localStorage.getItem('cc_surat_meetups');
+      if (storedMeetups) {
+        try {
+          const parsed: Meetup[] = JSON.parse(storedMeetups);
+          setGroupMeetups(parsed.filter((m) => m.group_id === groupId));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, [groupId]);
   const [reportSuccess, setReportSuccess] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [hasRequestedJoin, setHasRequestedJoin] = useState(false);
