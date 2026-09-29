@@ -23,8 +23,10 @@ import { Button } from '@/components/ui/button';
 import { Group, GroupCategory } from '@/types';
 import { INITIAL_GROUPS, INITIAL_SPONSOR_BANNERS } from '@/lib/data';
 import { CATEGORIES, CATEGORY_CONFIG } from '@/lib/category-helpers';
+import { useCity } from '@/context/city-context';
 
 export default function GroupsPage() {
+  const { currentCity } = useCity();
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -218,14 +220,14 @@ export default function GroupsPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-foreground">
-              Surat Community Circles
+              {currentCity.name} Community Circles
             </h1>
             <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
               WhatsApp-Controlled
             </span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Join interest-based circles, chat in real-time, or create protected groups with member limits & admin approval.
+            Join interest-based circles, chat in real-time, or create protected groups with member limits & admin approval in {currentCity.name}.
           </p>
         </div>
         <Button
