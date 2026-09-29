@@ -28,6 +28,12 @@ export interface Group {
   cover_url?: string;
   rules?: string;
   member_count?: number;
+  max_members?: number; // WhatsApp style cap: 50, 100, 256, 512, 1024
+  require_approval?: boolean; // WhatsApp "Approve New Participants"
+  only_admins_message?: boolean; // WhatsApp "Send Messages: Admins Only"
+  invite_code?: string; // WhatsApp style invite code
+  invite_link_enabled?: boolean;
+  verified_only?: boolean;
   created_at: string;
   updated_at?: string;
 }

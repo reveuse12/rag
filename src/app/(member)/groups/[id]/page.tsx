@@ -23,6 +23,17 @@ import {
   Loader2,
   Pin,
   Smile,
+  Settings,
+  UserCheck,
+  UserX,
+  Lock,
+  Share2,
+  Copy,
+  RotateCcw,
+  Sparkles,
+  QrCode,
+  ShieldAlert,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Group, Meetup } from '@/types';
@@ -41,26 +52,66 @@ interface ChatMessage {
   timestamp: string;
 }
 
+interface JoinRequest {
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_avatar: string;
+  neighborhood: string;
+  is_verified: boolean;
+  requested_at: string;
+}
+
 const REACTION_EMOJIS = ['👍', '❤️', '🔥', '🚀', '😂', '🎉'];
+
+const SAMPLE_PENDING_REQUESTS: JoinRequest[] = [
+  {
+    id: 'req-1',
+    user_id: 'u-dhruv',
+    user_name: 'Dhruv Kothari',
+    user_avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
+    neighborhood: 'Vesu Main Road, Surat',
+    is_verified: true,
+    requested_at: '10m ago',
+  },
+  {
+    id: 'req-2',
+    user_id: 'u-ananya',
+    user_name: 'Ananya Desai',
+    user_avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
+    neighborhood: 'Piplod & SVNIT Area, Surat',
+    is_verified: true,
+    requested_at: '45m ago',
+  },
+];
 
 export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
   const groupId = (params?.id as string) || 'g-tech-surat';
 
-  const group = INITIAL_GROUPS.find((g) => g.id === groupId) || INITIAL_GROUPS[0];
-  const groupMeetups = INITIAL_MEETUPS.filter((m) => m.group_id === group.id);
+  const initialGroup = INITIAL_GROUPS.find((g) => g.id === groupId) || INITIAL_GROUPS[0];
+  const groupMeetups = INITIAL_MEETUPS.filter((m) => m.group_id === initialGroup.id);
   const sponsorBanner = INITIAL_SPONSOR_BANNERS.find(
-    (b) => b.placement === 'group' && (b.target_id === group.id || !b.target_id)
+    (b) => b.placement === 'group' && (b.target_id === initialGroup.id || !b.target_id)
   ) || INITIAL_SPONSOR_BANNERS[0];
 
-  const [activeTab, setActiveTab] = useState<'chat' | 'meetups' | 'members'>('chat');
+  // Dynamic Group Settings State (WhatsApp-style Controls)
+  const [group, setGroup] = useState<Group>(initialGroup);
+  const [activeTab, setActiveTab] = useState<'chat' | 'meetups' | 'members' | 'settings'>('chat');
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportSuccess, setReportSuccess] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
+  const [hasRequestedJoin, setHasRequestedJoin] = useState(false);
   const [showPinnedAnnouncement, setShowPinnedAnnouncement] = useState(true);
+
+  // Join Requests Queue State (WhatsApp "Approve New Participants")
+  const [pendingRequests, setPendingRequests] = useState<JoinRequest[]>(SAMPLE_PENDING_REQUESTS);
+  const [requestActionSuccess, setRequestActionSuccess] = useState<string | null>(null);
 
   // Chat Reactions State: { [msgId]: { [emoji]: count } } & user's own reactions
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
@@ -83,9 +134,10 @@ export default function GroupDetailPage() {
     display_name: CURRENT_USER.display_name,
     avatar_url: CURRENT_USER.avatar_url!,
     is_verified: CURRENT_USER.is_verified,
+    role: CURRENT_USER.role,
   });
 
-  // Load Active User and Joined State from localStorage
+  // Load Group Settings, Active User and Joined State from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedName = localStorage.getItem('user_display_name');
@@ -101,7 +153,29 @@ export default function GroupDetailPage() {
             storedAvatar ||
             'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
           is_verified: true,
+          role: 'admin',
         });
+      }
+
+      // Load persistent Group Settings
+      const savedGroupSettings = localStorage.getItem(`cc_group_settings_${groupId}`);
+      if (savedGroupSettings) {
+        try {
+          const parsed = JSON.parse(savedGroupSettings);
+          setGroup((prev) => ({ ...prev, ...parsed }));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Load persistent pending join requests
+      const savedRequests = localStorage.getItem(`cc_group_requests_${groupId}`);
+      if (savedRequests) {
+        try {
+          setPendingRequests(JSON.parse(savedRequests));
+        } catch (e) {
+          console.error(e);
+        }
       }
 
       const joinedList = localStorage.getItem('cc_joined_groups');
@@ -117,6 +191,17 @@ export default function GroupDetailPage() {
         setIsJoined(['g-tech-surat', 'g-trekkers', 'g-foodies'].includes(groupId));
       }
 
+      // Check if user has requested join
+      const requestedList = localStorage.getItem('cc_requested_groups');
+      if (requestedList) {
+        try {
+          const reqIds: string[] = JSON.parse(requestedList);
+          setHasRequestedJoin(reqIds.includes(groupId));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       // Load reactions
       const savedReactions = localStorage.getItem(`cc_chat_reactions_${groupId}`);
       if (savedReactions) {
@@ -128,6 +213,47 @@ export default function GroupDetailPage() {
       }
     }
   }, [groupId]);
+
+  // Save Group Settings updates
+  const saveGroupSettings = (newSettings: Partial<Group>) => {
+    const updated = { ...group, ...newSettings };
+    setGroup(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`cc_group_settings_${groupId}`, JSON.stringify(updated));
+    }
+  };
+
+  // WhatsApp Approve Participant Handler
+  const handleApproveRequest = (request: JoinRequest) => {
+    const updatedRequests = pendingRequests.filter((r) => r.id !== request.id);
+    setPendingRequests(updatedRequests);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`cc_group_requests_${groupId}`, JSON.stringify(updatedRequests));
+    }
+
+    // Increment member count
+    const newCount = (group.member_count || 1) + 1;
+    saveGroupSettings({ member_count: newCount });
+
+    setRequestActionSuccess(`✓ Approved ${request.user_name} into ${group.name}`);
+    setTimeout(() => setRequestActionSuccess(null), 3500);
+  };
+
+  // WhatsApp Decline Participant Handler
+  const handleDeclineRequest = (requestId: string) => {
+    const updatedRequests = pendingRequests.filter((r) => r.id !== requestId);
+    setPendingRequests(updatedRequests);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`cc_group_requests_${groupId}`, JSON.stringify(updatedRequests));
+    }
+  };
+
+  // WhatsApp Reset / Revoke Invite Link Handler
+  const handleResetInviteLink = () => {
+    const newCode = `cc_surat_${Math.random().toString(36).substring(2, 9)}`;
+    saveGroupSettings({ invite_code: newCode });
+    setCopiedLink(false);
+  };
 
   const handleToggleReaction = (msgId: string, emoji: string) => {
     setReactions((prev) => {
@@ -160,19 +286,75 @@ export default function GroupDetailPage() {
     setActiveReactionPickerMsgId(null);
   };
 
+  // Toggle Join or Request Join with WhatsApp-style limits & approval checks
   const toggleJoin = () => {
-    const nextState = !isJoined;
-    setIsJoined(nextState);
+    if (isJoined) {
+      setIsJoined(false);
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('cc_joined_groups');
+          let ids: string[] = stored ? JSON.parse(stored) : [];
+          ids = ids.filter((id) => id !== groupId);
+          localStorage.setItem('cc_joined_groups', JSON.stringify(ids));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      return;
+    }
 
+    // Capacity Cap Limit Check (WhatsApp-style)
+    const maxCap = group.max_members || 256;
+    const currentTotal = group.member_count || 1;
+    if (currentTotal >= maxCap) {
+      alert(`⚠️ This circle has reached its maximum capacity of ${maxCap} members. You have been added to the priority waitlist.`);
+      return;
+    }
+
+    // Admin Approval Mode (WhatsApp "Approve New Participants")
+    if (group.require_approval) {
+      if (hasRequestedJoin) {
+        setHasRequestedJoin(false);
+        const reqs = pendingRequests.filter((r) => r.user_id !== activeUser.id);
+        setPendingRequests(reqs);
+        if (typeof window !== 'undefined') {
+          const storedReqs = localStorage.getItem('cc_requested_groups');
+          let ids: string[] = storedReqs ? JSON.parse(storedReqs) : [];
+          ids = ids.filter((id) => id !== groupId);
+          localStorage.setItem('cc_requested_groups', JSON.stringify(ids));
+          localStorage.setItem(`cc_group_requests_${groupId}`, JSON.stringify(reqs));
+        }
+      } else {
+        setHasRequestedJoin(true);
+        const newReq: JoinRequest = {
+          id: `req-${Date.now()}`,
+          user_id: activeUser.id,
+          user_name: activeUser.display_name,
+          user_avatar: activeUser.avatar_url,
+          neighborhood: 'Surat Resident (Vesu/Piplod)',
+          is_verified: activeUser.is_verified,
+          requested_at: 'Just now',
+        };
+        const updatedReqs = [newReq, ...pendingRequests];
+        setPendingRequests(updatedReqs);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`cc_group_requests_${groupId}`, JSON.stringify(updatedReqs));
+          const storedReqs = localStorage.getItem('cc_requested_groups');
+          let ids: string[] = storedReqs ? JSON.parse(storedReqs) : [];
+          if (!ids.includes(groupId)) ids.push(groupId);
+          localStorage.setItem('cc_requested_groups', JSON.stringify(ids));
+        }
+      }
+      return;
+    }
+
+    // Direct Instant Join
+    setIsJoined(true);
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem('cc_joined_groups');
         let ids: string[] = stored ? JSON.parse(stored) : ['g-tech-surat', 'g-trekkers', 'g-foodies'];
-        if (nextState) {
-          if (!ids.includes(groupId)) ids.push(groupId);
-        } else {
-          ids = ids.filter((id) => id !== groupId);
-        }
+        if (!ids.includes(groupId)) ids.push(groupId);
         localStorage.setItem('cc_joined_groups', JSON.stringify(ids));
       } catch (e) {
         console.error(e);
@@ -342,13 +524,12 @@ export default function GroupDetailPage() {
     }
   };
 
-  // Signed upload + Image moderation lifecycle (PRD Section 3 & 5)
+  // Signed upload + Image moderation lifecycle
   const handleSimulateImageUpload = async () => {
     setUploadingImage(true);
     const mockImgUrl = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80';
 
     try {
-      // Step 1: Upload marked "pending"
       const res = await fetch(`/api/groups/${groupId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -375,7 +556,6 @@ export default function GroupDetailPage() {
           });
         }
 
-        // Step 2: Auto-moderate to "approved" after 2.5s
         setTimeout(() => {
           setMessages((prev) =>
             prev.map((m) =>
@@ -401,31 +581,62 @@ export default function GroupDetailPage() {
     }, 1500);
   };
 
+  const handleCopyInviteLink = () => {
+    if (typeof window !== 'undefined') {
+      const link = `${window.location.origin}/groups/${group.id}?invite=${group.invite_code || 'cc_join'}`;
+      navigator.clipboard.writeText(link);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    }
+  };
+
   const config = CATEGORY_CONFIG[group.category];
   const CategoryIcon = config.icon;
+  const maxCap = group.max_members || 256;
+  const currentMembers = (group.member_count || 1) + (isJoined ? 1 : 0);
+  const isFull = currentMembers >= maxCap && !isJoined;
+  const inviteUrl = typeof window !== 'undefined' ? `${window.location.origin}/groups/${group.id}?invite=${group.invite_code || 'cc_join'}` : '';
 
   return (
     <div className="space-y-4">
-      {/* Back Link */}
+      {/* Back Link & Header Actions */}
       <div className="flex items-center justify-between">
         <Link href="/groups" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Circles
         </Link>
-        <button
-          onClick={() => setShowReportModal(true)}
-          className="text-xs text-danger/80 hover:text-danger flex items-center gap-1 font-medium"
-        >
-          <AlertTriangle className="w-3.5 h-3.5" /> Report Circle
-        </button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowInviteModal(true)}
+            className="text-xs h-7 px-2.5 flex items-center gap-1 border-border font-semibold"
+          >
+            <Share2 className="w-3 h-3 text-primary" /> Invite via Link
+          </Button>
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="text-xs text-danger/80 hover:text-danger flex items-center gap-1 font-medium"
+          >
+            <AlertTriangle className="w-3.5 h-3.5" /> Report Circle
+          </button>
+        </div>
       </div>
 
-      {/* Group Hero Banner */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
-        <div className="relative h-44 sm:h-52">
-          <img src={group.cover_url} alt={group.name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
+      {/* Success notification for admin actions */}
+      {requestActionSuccess && (
+        <div className="p-3 bg-success/15 border border-success/30 rounded-2xl text-xs text-success font-bold flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{requestActionSuccess}</span>
+        </div>
+      )}
 
-          <div className="absolute top-4 left-4">
+      {/* Group Hero Banner with WhatsApp-style limits */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+        <div className="relative h-48 sm:h-56">
+          <img src={group.cover_url} alt={group.name} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/40 to-transparent" />
+
+          <div className="absolute top-4 left-4 flex items-center gap-2">
             <span
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-card/95 backdrop-blur-xs text-foreground border border-border shadow-xs"
               style={{ borderLeftColor: config.color, borderLeftWidth: 3 }}
@@ -433,14 +644,21 @@ export default function GroupDetailPage() {
               <CategoryIcon className="w-3.5 h-3.5" style={{ color: config.color }} />
               {group.category}
             </span>
+
+            {group.require_approval && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-warning/20 text-warning border border-warning/30 backdrop-blur-xs">
+                <Lock className="w-3 h-3" /> Admin Approval Req.
+              </span>
+            )}
           </div>
 
           <div className="absolute bottom-4 left-4 right-4 text-white flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
               <h1 className="text-xl sm:text-2xl font-black font-heading mb-1">{group.name}</h1>
               <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-200">
-                <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" /> {(group.member_count || 1) + (isJoined ? 1 : 0)} Members
+                {/* Capacity Counter */}
+                <span className="flex items-center gap-1 font-semibold">
+                  <Users className="w-3.5 h-3.5 text-primary" /> {currentMembers} / {maxCap} Members
                 </span>
                 <span>·</span>
                 <span>Admin: {group.admin_name}</span>
@@ -449,30 +667,64 @@ export default function GroupDetailPage() {
                   onClick={() => setShowRulesModal(true)}
                   className="underline hover:text-white flex items-center gap-1 font-semibold"
                 >
-                  <FileText className="w-3.5 h-3.5" /> View Circle Rules
+                  <FileText className="w-3.5 h-3.5" /> View Rules
                 </button>
+              </div>
+
+              {/* Visual Capacity Bar */}
+              <div className="w-44 h-1.5 bg-white/20 rounded-full overflow-hidden mt-2">
+                <div
+                  className="h-full bg-primary transition-all duration-300 rounded-full"
+                  style={{ width: `${Math.min(100, (currentMembers / maxCap) * 100)}%` }}
+                />
               </div>
             </div>
 
-            <Button
-              size="sm"
-              onClick={toggleJoin}
-              className={`font-semibold text-xs h-8 px-3 shadow-md shrink-0 ${
-                isJoined
-                  ? 'bg-card text-foreground hover:bg-muted'
-                  : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-              }`}
-            >
+            {/* Smart Join / Request Button */}
+            <div className="flex items-center gap-2 shrink-0">
               {isJoined ? (
-                <>
+                <Button
+                  size="sm"
+                  onClick={toggleJoin}
+                  className="bg-card text-foreground hover:bg-muted font-semibold text-xs h-9 px-3.5 shadow-md"
+                >
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-success" /> Joined Circle
-                </>
+                </Button>
+              ) : hasRequestedJoin ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={toggleJoin}
+                  className="bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30 text-xs h-9 px-3.5 font-bold"
+                >
+                  <Clock className="w-3.5 h-3.5 mr-1 animate-spin" /> Pending Approval (Cancel)
+                </Button>
+              ) : isFull ? (
+                <Button
+                  size="sm"
+                  disabled
+                  className="bg-zinc-800 text-zinc-400 font-bold text-xs h-9 px-3.5 cursor-not-allowed"
+                >
+                  <Lock className="w-3.5 h-3.5 mr-1" /> Circle Full ({maxCap}/{maxCap})
+                </Button>
+              ) : group.require_approval ? (
+                <Button
+                  size="sm"
+                  onClick={toggleJoin}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 px-4 shadow-md"
+                >
+                  <UserCheck className="w-3.5 h-3.5 mr-1.5" /> Request to Join
+                </Button>
               ) : (
-                <>
+                <Button
+                  size="sm"
+                  onClick={toggleJoin}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 px-4 shadow-md"
+                >
                   <Plus className="w-3.5 h-3.5 mr-1" /> Join Circle
-                </>
+                </Button>
               )}
-            </Button>
+            </div>
           </div>
         </div>
 
@@ -493,10 +745,10 @@ export default function GroupDetailPage() {
         )}
 
         {/* Tab Switcher */}
-        <div className="flex border-t border-border">
+        <div className="flex border-t border-border overflow-x-auto">
           <button
             onClick={() => setActiveTab('chat')}
-            className={`flex-1 py-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${
+            className={`flex-1 py-3 px-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'chat'
                 ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -507,7 +759,7 @@ export default function GroupDetailPage() {
           </button>
           <button
             onClick={() => setActiveTab('meetups')}
-            className={`flex-1 py-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${
+            className={`flex-1 py-3 px-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'meetups'
                 ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -518,14 +770,30 @@ export default function GroupDetailPage() {
           </button>
           <button
             onClick={() => setActiveTab('members')}
-            className={`flex-1 py-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${
+            className={`flex-1 py-3 px-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'members'
                 ? 'border-primary text-primary bg-primary/5'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             <Users className="w-4 h-4" />
-            Members ({group.member_count})
+            Members ({currentMembers})
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex-1 py-3 px-3 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'settings'
+                ? 'border-primary text-primary bg-primary/5'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Settings & Requests
+            {pendingRequests.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-accent text-accent-foreground text-[10px] font-extrabold">
+                {pendingRequests.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -640,7 +908,6 @@ export default function GroupDetailPage() {
 
                       {/* Emoji Reactions Bar */}
                       <div className="flex flex-wrap items-center gap-1 mt-1 px-1">
-                        {/* Render Active Reactions */}
                         {Object.entries(msgReactions).map(([emoji, count]) => {
                           if (count <= 0) return null;
                           const userHasReacted = userReactionList.includes(emoji);
@@ -715,36 +982,43 @@ export default function GroupDetailPage() {
             </div>
           )}
 
-          {/* Chat Input Bar */}
-          <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-card/90 flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSimulateImageUpload}
-              disabled={uploadingImage}
-              className="h-9 px-2.5 text-muted-foreground hover:text-foreground shrink-0"
-              title="Upload moderated image"
-            >
-              {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-            </Button>
+          {/* Chat Input Bar (or WhatsApp-style Admin Only Lock) */}
+          {group.only_admins_message && activeUser.role !== 'admin' ? (
+            <div className="p-4 border-t border-border bg-muted/50 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+              <Lock className="w-4 h-4 text-warning" />
+              <span>Only circle admins can send messages to this group.</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-card/90 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSimulateImageUpload}
+                disabled={uploadingImage}
+                className="h-9 px-2.5 text-muted-foreground hover:text-foreground shrink-0"
+                title="Upload moderated image"
+              >
+                {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+              </Button>
 
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={`Message as ${activeUser.display_name}...`}
-              className="flex-1 px-4 py-2 rounded-xl border border-input bg-background text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-primary"
-            />
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder={`Message as ${activeUser.display_name}...`}
+                className="flex-1 px-4 py-2 rounded-xl border border-input bg-background text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-primary"
+              />
 
-            <Button
-              type="submit"
-              size="sm"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 shrink-0 font-semibold"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 shrink-0 font-semibold"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+          )}
         </div>
       )}
 
@@ -801,7 +1075,7 @@ export default function GroupDetailPage() {
           <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
               <h3 className="font-bold text-sm">
-                Circle Members ({(group.member_count || 1) + (isJoined ? 1 : 0)})
+                Circle Members ({currentMembers} / {maxCap})
               </h3>
               <p className="text-[11px] text-muted-foreground">
                 Phone numbers and personal emails are hidden under strict PostgreSQL RLS.
@@ -868,6 +1142,260 @@ export default function GroupDetailPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: WhatsApp-Style Group Settings & Join Requests (Admin Controls) */}
+      {activeTab === 'settings' && (
+        <div className="space-y-6">
+          {/* Pending Requests Section (WhatsApp "Approve New Participants") */}
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div>
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-accent" /> Pending Join Requests ({pendingRequests.length})
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Review and approve verified Surat residents before they can participate in circle chat.
+                </p>
+              </div>
+              <span className="text-[11px] px-2.5 py-1 rounded-full bg-primary/10 text-primary font-bold">
+                {group.require_approval ? 'Approval Required: ON' : 'Approval Required: OFF'}
+              </span>
+            </div>
+
+            {pendingRequests.length === 0 ? (
+              <div className="text-center py-8 text-xs text-muted-foreground bg-muted/30 rounded-xl">
+                ✓ All join requests have been processed. No pending requests.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingRequests.map((req) => (
+                  <div
+                    key={req.id}
+                    className="p-3.5 rounded-2xl bg-muted/40 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={req.user_avatar}
+                        alt={req.user_name}
+                        className="w-10 h-10 rounded-full object-cover border border-border shrink-0"
+                      />
+                      <div>
+                        <div className="font-bold text-xs flex items-center gap-1.5">
+                          {req.user_name}
+                          {req.is_verified && <ShieldCheck className="w-3.5 h-3.5 text-primary" />}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
+                          <span>📍 {req.neighborhood}</span>
+                          <span>·</span>
+                          <span>Requested {req.requested_at}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => handleApproveRequest(req)}
+                        className="bg-success hover:bg-success/90 text-white font-semibold text-xs h-8 px-3"
+                      >
+                        <Check className="w-3.5 h-3.5 mr-1" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeclineRequest(req.id)}
+                        className="border-danger/30 text-danger hover:bg-danger/10 text-xs h-8 px-3"
+                      >
+                        <UserX className="w-3.5 h-3.5 mr-1" /> Decline
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* WhatsApp Group Settings Configuration */}
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-5">
+            <h3 className="font-bold text-base flex items-center gap-2 pb-3 border-b border-border">
+              <Settings className="w-5 h-5 text-primary" /> Circle Controls & Capacity Settings
+            </h3>
+
+            <div className="space-y-4 text-xs sm:text-sm">
+              {/* Max Member Limit Selector */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/40 rounded-xl border border-border">
+                <div>
+                  <div className="font-bold text-foreground">Max Member Capacity Limit</div>
+                  <div className="text-xs text-muted-foreground">
+                    Limit the number of active participants in this circle (WhatsApp cap default is 256).
+                  </div>
+                </div>
+                <select
+                  value={group.max_members || 256}
+                  onChange={(e) => saveGroupSettings({ max_members: Number(e.target.value) })}
+                  className="px-3 py-1.5 rounded-lg border border-input bg-card font-semibold text-xs shrink-0"
+                >
+                  <option value={50}>50 Members (Exclusive)</option>
+                  <option value={100}>100 Members (Focused)</option>
+                  <option value={256}>256 Members (WhatsApp Standard)</option>
+                  <option value={512}>512 Members (Large)</option>
+                  <option value={1024}>1024 Members (Mega Circle)</option>
+                </select>
+              </div>
+
+              {/* Approve New Participants Toggle */}
+              <div className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border">
+                <div>
+                  <div className="font-bold text-foreground">Approve New Participants</div>
+                  <div className="text-xs text-muted-foreground">
+                    When turned on, admins must approve anyone who wants to join this circle.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => saveGroupSettings({ require_approval: !group.require_approval })}
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    group.require_approval ? 'bg-primary' : 'bg-muted-foreground/30'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      group.require_approval ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Who Can Send Messages */}
+              <div className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border">
+                <div>
+                  <div className="font-bold text-foreground">Send Messages Permission</div>
+                  <div className="text-xs text-muted-foreground">
+                    Choose whether all members or only circle admins can post in this group chat.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => saveGroupSettings({ only_admins_message: !group.only_admins_message })}
+                  className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-colors ${
+                    group.only_admins_message
+                      ? 'bg-accent text-accent-foreground shadow-xs'
+                      : 'bg-muted text-foreground border border-border'
+                  }`}
+                >
+                  {group.only_admins_message ? '🔒 Only Admins' : '💬 All Members'}
+                </button>
+              </div>
+
+              {/* Verified Surat Residents Only */}
+              <div className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border">
+                <div>
+                  <div className="font-bold text-foreground">Verified Residents Only</div>
+                  <div className="text-xs text-muted-foreground">
+                    Only allow members with a verified Surat phone OTP & neighborhood badge.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => saveGroupSettings({ verified_only: !group.verified_only })}
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    group.verified_only ? 'bg-primary' : 'bg-muted-foreground/30'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      group.verified_only ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* WhatsApp Invite Link & Reset Link */}
+              <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="font-bold text-foreground">Group Invite Link</div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleResetInviteLink}
+                    className="text-xs h-7 text-danger hover:bg-danger/10 border-danger/30 font-semibold"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" /> Reset / Revoke Link
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`https://citycircle-surat.vercel.app/groups/${group.id}?invite=${group.invite_code || 'cc_join'}`}
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-background border border-input text-xs font-mono select-all"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleCopyInviteLink}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8"
+                  >
+                    {copiedLink ? 'Copied!' : 'Copy Link'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp-Style Invite Link & QR Code Sheet / Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card text-card-foreground border border-border rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-bold text-base font-heading flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-primary" /> Invite to {group.name}
+              </h3>
+              <button onClick={() => setShowInviteModal(false)} className="p-1 rounded-md text-muted-foreground hover:bg-muted">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-4">
+              Share this link or QR code with trusted Surat friends. You can reset or revoke this link anytime.
+            </p>
+
+            {/* Simulated QR Code */}
+            <div className="p-4 bg-white rounded-2xl border border-zinc-200 flex flex-col items-center justify-center mb-4">
+              <QrCode className="w-32 h-32 text-zinc-900" />
+              <span className="text-[10px] text-zinc-500 font-semibold mt-1">Scan with camera to join circle</span>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={inviteUrl}
+                  className="flex-1 px-3 py-2 rounded-xl bg-muted border border-input font-mono text-[11px]"
+                />
+                <Button size="sm" onClick={handleCopyInviteLink} className="bg-primary text-primary-foreground h-9 font-semibold">
+                  {copiedLink ? 'Copied!' : 'Copy'}
+                </Button>
+              </div>
+
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                  `👋 Join our Surat circle *${group.name}* on CityCircle!\n\n👉 Join link: ${inviteUrl}`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="block"
+              >
+                <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9">
+                  Share via WhatsApp
+                </Button>
+              </a>
+            </div>
           </div>
         </div>
       )}
