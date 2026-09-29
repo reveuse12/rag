@@ -21,28 +21,33 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Volume2,
   Users,
   Star,
   ThumbsUp,
-  TrendingUp,
   Bookmark,
   Zap,
   Coffee,
   Compass,
   GraduationCap,
+  TrendingUp,
+  Layers,
+  Search,
+  Sliders,
+  ExternalLink,
+  Shield,
+  Building,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
 import { Group, GroupCategory } from '@/types';
 import { CATEGORY_CONFIG, CATEGORIES } from '@/lib/category-helpers';
 
-// Curated Mock Groups
+// Curated Mock Groups matching real app circles
 const LANDING_GROUPS: Group[] = [
   {
     id: 'g-tech-surat',
     name: 'Surat Tech & Startup Circle',
-    description: 'Connect with founders, engineers, and creators in Surat. We host monthly tech mixers, demo days, and peer learning sessions across Vesu & Piplod.',
+    description: 'Founders, engineers, and creators in Surat. Monthly tech mixers, demo days, and AI peer learning across Vesu & Piplod.',
     category: 'Custom',
     is_public: true,
     admin_id: 'a0001',
@@ -50,12 +55,13 @@ const LANDING_GROUPS: Group[] = [
     cover_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
     member_count: 142,
     max_members: 256,
+    require_approval: true,
     created_at: new Date().toISOString(),
   },
   {
     id: 'g-trekkers',
     name: 'Weekend Trekkers & Explorers',
-    description: 'Discover scenic trails, weekend getaways, waterfalls, and outdoor sunrise rides around Surat, Dumas, and Dang forests.',
+    description: 'Scenic trails, weekend getaways, waterfalls, and sunrise cycling routes around Surat, Dumas, and Dang forests.',
     category: 'Tourism',
     is_public: true,
     admin_id: 'a0002',
@@ -63,12 +69,13 @@ const LANDING_GROUPS: Group[] = [
     cover_url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
     member_count: 98,
     max_members: 150,
+    require_approval: false,
     created_at: new Date().toISOString(),
   },
   {
     id: 'g-foodies',
     name: 'Surat Foodies & Cafes Club',
-    description: 'Exploring the legendary street food and aesthetic specialty coffee cafes in Surat, from Dumas Road to Vesu and Ghod Dod.',
+    description: 'Exploring legendary street food spots and aesthetic specialty coffee roasters in Surat from Dumas Road to Vesu.',
     category: 'Party',
     is_public: true,
     admin_id: 'a0003',
@@ -76,12 +83,13 @@ const LANDING_GROUPS: Group[] = [
     cover_url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
     member_count: 215,
     max_members: 256,
+    require_approval: false,
     created_at: new Date().toISOString(),
   },
   {
     id: 'g-svnit',
     name: 'SVNIT & University Alumni Network',
-    description: 'Students and alumni from SVNIT and Surat universities networking, mentoring, building side projects, and sharing career referrals.',
+    description: 'Students and alumni from SVNIT and Surat universities networking, sharing job referrals, and building side projects.',
     category: 'University',
     is_public: true,
     admin_id: 'a0004',
@@ -89,12 +97,13 @@ const LANDING_GROUPS: Group[] = [
     cover_url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80',
     member_count: 176,
     max_members: 500,
+    require_approval: true,
     created_at: new Date().toISOString(),
   },
   {
     id: 'g-property',
     name: 'Surat Commercial & Living Spaces',
-    description: 'Trusted peer discussions on flatmate matching, co-working spaces, rental flats in Vesu/Pal, and verified commercial property reviews.',
+    description: 'Peer discussions on flatmate matching, co-working spaces, rental flats in Vesu/Pal, and verified property insights.',
     category: 'Property',
     is_public: false,
     admin_id: 'a0005',
@@ -102,6 +111,7 @@ const LANDING_GROUPS: Group[] = [
     cover_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
     member_count: 84,
     max_members: 200,
+    require_approval: true,
     created_at: new Date().toISOString(),
   },
 ];
@@ -132,7 +142,7 @@ const LANDING_MEETUPS = [
   },
 ];
 
-// Channels for the Live Hero App Viewport
+// Channels for Live Hero Feed View
 const HERO_FEED_DATA = [
   {
     id: 'tech',
@@ -140,15 +150,14 @@ const HERO_FEED_DATA = [
     name: 'Surat Tech & Startup Circle',
     category: 'Startups & AI',
     activeCount: 48,
-    upcomingEvent: 'AI Builders Mixer · Sat, Oct 18 @ Vesu',
-    audioRoom: { active: true, title: 'Surat Demo Day Pitch Practice', listeners: 18 },
+    capStatus: '142 / 256 members · Admin approval active',
     posts: [
       {
         id: 1,
         author: 'Prayag Bagtharia',
-        role: 'Circle Host · Founder',
+        role: 'Circle Host · Admin',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        content: 'Surat AI Builders Demo Day locked in for Saturday at Vesu. 24 seats reserved, 6 spots remaining for founders.',
+        content: 'Surat AI Builders Demo Day locked in for Saturday at Vesu. 24 seats reserved on the interactive map, 6 spots remaining.',
         timestamp: '2m ago',
         metrics: { upvotes: 24, bookmarks: 11 },
       },
@@ -169,8 +178,7 @@ const HERO_FEED_DATA = [
     name: 'Weekend Trekkers & Cycling',
     category: 'Outdoors & Trails',
     activeCount: 36,
-    upcomingEvent: 'Sunrise Dumas Cycling Circuit · Sun, 5:45 AM',
-    audioRoom: { active: false, title: 'Trail Route Briefing', listeners: 0 },
+    capStatus: '98 / 150 members · Open circle',
     posts: [
       {
         id: 1,
@@ -189,15 +197,14 @@ const HERO_FEED_DATA = [
     name: 'Surat Specialty Coffee & Foodies',
     category: 'Cafes & Dining',
     activeCount: 64,
-    upcomingEvent: 'Artisanal Pour-Over Tasting · Sun, 10:00 AM @ Piplod',
-    audioRoom: { active: true, title: 'Best Specialty Cafes in Vesu', listeners: 22 },
+    capStatus: '215 / 256 members · Near capacity',
     posts: [
       {
         id: 1,
         author: 'Diya Patel',
         role: 'Food Curator',
         avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&q=80',
-        content: 'Discovered a hidden micro-roastery near VIP Road with single-origin pour-overs. Added to Sunday meetup itinerary.',
+        content: 'Discovered a hidden micro-roastery near VIP Road with single-origin pour-overs. Pinned on the city map for Sunday.',
         timestamp: '12m ago',
         metrics: { upvotes: 41, bookmarks: 19 },
       },
@@ -205,20 +212,54 @@ const HERO_FEED_DATA = [
   },
 ];
 
+// Surat Real Trends (from r/surat & local social pulse)
+const REAL_TRENDS_DATA = [
+  {
+    id: 't1',
+    source: 'r/surat',
+    category: 'Food & Cafes',
+    title: 'Top 5 specialty coffee roasters with work-friendly setups in Vesu & Piplod',
+    upvotes: 84,
+    comments: 29,
+    snippet: 'Detailed breakdown comparing bean origins, WiFi speeds, and seating options across VIP Road cafes.',
+    time: '3 hours ago',
+  },
+  {
+    id: 't2',
+    source: 'r/surat',
+    category: 'Civic & Transit',
+    title: 'Surat Metro Phase 1 station updates around Athwa Lines and Diamond Bourse',
+    upvotes: 112,
+    comments: 43,
+    snippet: 'Discussion on commercial connectivity between Dream City station and Adajan route.',
+    time: '5 hours ago',
+  },
+  {
+    id: 't3',
+    source: 'r/surat',
+    category: 'Tech & Startups',
+    title: 'Growing AI and SaaS builder meetups happening in Surat this quarter',
+    upvotes: 67,
+    comments: 18,
+    snippet: 'Community thread connecting engineers and founders looking for local side-project partners.',
+    time: '1 day ago',
+  },
+];
+
 // Surat Geographic Hotspots for Radar Matrix
 const RADAR_NODES = [
-  { id: 'vesu', name: 'Vesu Innovation Hub', coords: '21.144° N, 72.771° E', x: 68, y: 64, active: 38, note: 'AI Mixers & Coworking', trend: '+14% this wk' },
-  { id: 'piplod', name: 'Piplod Cultural Strip', coords: '21.168° N, 72.788° E', x: 44, y: 46, active: 24, note: 'Specialty Coffee & Mixers', trend: 'High density' },
+  { id: 'vesu', name: 'Vesu Innovation Hub', coords: '21.144° N, 72.771° E', x: 68, y: 64, active: 38, note: 'AI Mixers & Coworking', trend: 'Meetups active' },
+  { id: 'piplod', name: 'Piplod Cultural Strip', coords: '21.168° N, 72.788° E', x: 44, y: 46, active: 24, note: 'Specialty Coffee & Mixers', trend: 'Cafe pins' },
   { id: 'svnit', name: 'SVNIT University Node', coords: '21.163° N, 72.784° E', x: 54, y: 34, active: 46, note: 'Alumni & Tech Labs', trend: 'Verified only' },
-  { id: 'dumas', name: 'Dumas Sunrise Trail', coords: '21.092° N, 72.712° E', x: 22, y: 82, active: 18, note: 'Weekend Cycling & Treks', trend: '5:45 AM peak' },
-  { id: 'adajan', name: 'Adajan Creators Node', coords: '21.196° N, 72.798° E', x: 36, y: 22, active: 21, note: 'Founders & Designers', trend: '+8% this wk' },
+  { id: 'dumas', name: 'Dumas Sunrise Trail', coords: '21.092° N, 72.712° E', x: 22, y: 82, active: 18, note: 'Weekend Cycling & Treks', trend: '5:45 AM ride' },
+  { id: 'adajan', name: 'Adajan Creators Node', coords: '21.196° N, 72.798° E', x: 36, y: 22, active: 21, note: 'Founders & Designers', trend: 'Circle active' },
 ];
 
 export default function LandingPage() {
   // Hero Interactive States
-  const [heroView, setHeroView] = useState<'feed' | 'radar' | 'events'>('feed');
+  const [heroView, setHeroView] = useState<'feed' | 'map' | 'trends'>('feed');
   const [activeChannelId, setActiveChannelId] = useState<string>('tech');
-  const [fuzzRadius, setFuzzRadius] = useState<number>(300);
+  const [fuzzRadius, setFuzzRadius] = useState<number>(400);
   const [selectedNodeId, setSelectedNodeId] = useState<string>('vesu');
   const [postUpvotes, setPostUpvotes] = useState<{ [key: string]: number }>({
     'tech-1': 24,
@@ -253,6 +294,9 @@ export default function LandingPage() {
     const validCodes = ['FOUNDER2026', 'SURATVIP', 'CITYCIRCLE100', 'EARLYACCESS'];
     if (validCodes.includes(code.toUpperCase().trim())) {
       setPromoStatus('valid');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('founding_code', code.toUpperCase().trim());
+      }
     } else {
       setPromoStatus('invalid');
     }
@@ -262,8 +306,12 @@ export default function LandingPage() {
   const handleValidateInput = (e: React.FormEvent) => {
     e.preventDefault();
     const validCodes = ['FOUNDER2026', 'SURATVIP', 'CITYCIRCLE100', 'EARLYACCESS'];
-    if (validCodes.includes(promoCode.toUpperCase().trim())) {
+    const formatted = promoCode.toUpperCase().trim();
+    if (validCodes.includes(formatted)) {
       setPromoStatus('valid');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('founding_code', formatted);
+      }
     } else {
       setPromoStatus('invalid');
     }
@@ -276,34 +324,34 @@ export default function LandingPage() {
 
   const faqs = [
     {
-      q: 'What is CityCircle Surat?',
+      q: 'What makes CityCircle different from WhatsApp or Telegram groups?',
       category: 'general',
-      a: 'CityCircle Surat is the verified, hyper-local community platform connecting residents across tech startups, weekend trekking, food explorations, and university alumni in Surat, Gujarat. It combines real-time group chat with interactive venue discovery and offline event RSVPs.',
+      a: 'WhatsApp and Telegram groups quickly become noisy and spam-filled because they lack structure. CityCircle introduces hard member caps (50, 100, 256), host approval queues for new members, and announcement-only toggles. It also connects directly to an interactive map to host offline meetups.',
     },
     {
-      q: 'How does CityCircle protect my location and privacy?',
+      q: 'How does the interactive map and spatial jitter protect my home privacy?',
       category: 'privacy',
-      a: 'CityCircle enforces server-side location fuzzing. Your exact GPS point is never saved; instead, coordinates are blurred to a 300–500m radius and automatically purged from the database after 3 hours. You can revoke location sharing anytime using the instant panic button.',
+      a: 'When you drop a meetup or share your presence, CityCircle applies server-side spatial jitter (400m–1km radius). Your exact building GPS is never written to the database; only a broad neighborhood zone (like Vesu or Piplod) is rendered. Location entries automatically expire after 3 hours, with an instant 1-tap Panic Button to purge data immediately.',
     },
     {
-      q: 'Are phone numbers and email addresses kept confidential?',
+      q: 'Are my phone number and email visible to other members?',
       category: 'privacy',
-      a: 'Yes. Your phone number and email are locked behind strict PostgreSQL Row-Level Security (RLS) policies. Other circle members only ever see your chosen display name, avatar, and optional interest tags.',
+      a: 'No. Your phone number and email are locked behind PostgreSQL Row-Level Security (RLS). Other members only ever see your chosen display name, avatar, verified resident badges, and interest tags.',
     },
     {
-      q: 'How do I find and join tech & startup meetups in Surat?',
+      q: 'What is the City Trends feed (r/surat & Instagram sync)?',
+      category: 'trends',
+      a: 'To solve the cold-start problem of empty feeds, CityCircle automatically synchronizes top local discussions, food spots, metro updates, and city news from Reddit (r/surat) and local sources, giving you live city context on day one.',
+    },
+    {
+      q: 'How do I host a meetup or start a circle in Surat?',
       category: 'meetups',
-      a: 'Join the Surat Tech & Startup Circle on CityCircle to connect with founders, engineers, and creators. The circle hosts monthly developer mixers, demo days, and AI hack sessions in Vesu and Piplod with 1-click RSVP.',
+      a: 'Any verified member can click any point on the interactive map to drop an event pin, select a venue (e.g. coffee shop or cycling trail), set capacity limits, and start accepting 1-click RSVPs from circle members.',
     },
     {
-      q: 'How are community discussions and images moderated?',
+      q: 'How are discussions and media uploads moderated?',
       category: 'safety',
-      a: 'All image uploads undergo automated moderation verification before public display. In compliance with India’s Information Technology Rules 2021, members can flag objectionable content for review by our dedicated Chief Grievance Officer within a 24-hour SLA.',
-    },
-    {
-      q: 'What is the Founding Member Free Pass?',
-      category: 'membership',
-      a: 'The first 300–400 verified Surat members join with a 100% waived joining fee (₹0 instead of standard ₹250) using partner invite codes like FOUNDER2026 or SURATVIP.',
+      a: 'All uploaded media undergoes automated verification before broadcast. Under India’s Information Technology Rules 2021, members can flag inappropriate content for review by our dedicated Chief Grievance Officer in Surat within a 24-hour SLA.',
     },
   ];
 
@@ -319,7 +367,7 @@ export default function LandingPage() {
         <div className="absolute top-[10%] right-[15%] w-[440px] h-[440px] rounded-full bg-accent/10 blur-[110px] animate-glow-breathe [animation-delay:3s]" />
       </div>
 
-      {/* FLOATING PILL NAVBAR (Onload Reveal Down) */}
+      {/* FLOATING PILL NAVBAR */}
       <header className="sticky top-0 z-50 px-4 sm:px-6 pt-4 pb-2 animate-reveal-down">
         <nav className="max-w-5xl mx-auto h-16 rounded-full app-glass-card px-5 sm:px-7 flex items-center justify-between shadow-sm transition-all">
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -342,8 +390,11 @@ export default function LandingPage() {
             <a href="#hero-viewport" className="hover:text-foreground transition-colors">
               Platform
             </a>
-            <a href="#guilds" className="hover:text-foreground transition-colors">
+            <a href="#circles" className="hover:text-foreground transition-colors">
               Circles
+            </a>
+            <a href="#how-it-works" className="hover:text-foreground transition-colors">
+              How It Works
             </a>
             <a href="#privacy-vault" className="hover:text-foreground transition-colors">
               Privacy Vault
@@ -373,7 +424,7 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* HERO SECTION WITH STAGGERED REVEAL ONLOAD */}
+      {/* HERO SECTION */}
       <section className="relative pt-12 pb-16 md:pt-16 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
         <div className="text-center max-w-3xl mx-auto mb-12">
           {/* Eyebrow Pill */}
@@ -382,37 +433,37 @@ export default function LandingPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
-            <span className="text-muted-foreground">Founding Pass:</span>
-            <span className="font-bold text-primary">318 / 400 Claimed</span>
+            <span className="text-muted-foreground">Surat Founding Cohort:</span>
+            <span className="font-bold text-primary">318 / 400 Spots Claimed</span>
             <span className="text-border">·</span>
-            <span className="text-accent font-bold">₹0 Free Access</span>
+            <span className="text-accent font-bold">Free Lifetime Access</span>
           </div>
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-[-0.035em] text-foreground font-heading leading-[1.1] mb-6 animate-reveal-up [animation-delay:220ms] opacity-0 [animation-fill-mode:forwards]">
-            Real Surat Communities. <br />
+            The Anti-Spam Local Network <br />
             <span className="text-primary underline decoration-accent decoration-wavy decoration-3 underline-offset-8">
-              Verified & Real-World.
+              Built for Surat.
             </span>
           </h1>
 
           {/* Subheading */}
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 font-normal leading-relaxed animate-reveal-up [animation-delay:340ms] opacity-0 [animation-fill-mode:forwards]">
-            The private local network connecting verified tech founders, weekend trekkers, specialty foodies, and university alumni in Surat. 
-            Zero phone leaks, 300–500m fuzzed maps, and offline meetups that translate to real life.
+            Curated interest circles with WhatsApp-style participant caps (50–256) and host approvals. 
+            Pin offline meetups on a privacy-fuzzed city map, explore live r/surat discussions, and connect with verified locals without ever leaking your phone number.
           </p>
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto mb-8 animate-reveal-up [animation-delay:460ms] opacity-0 [animation-fill-mode:forwards]">
             <Link href="/auth/signup" className="w-full sm:w-auto flex-1">
               <Button size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-black text-sm h-12 rounded-full shadow-md shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all">
-                <span>Claim Free Pass — ₹0</span>
+                <span>Join Surat Cohort</span>
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
             <a href="#hero-viewport" className="w-full sm:w-auto flex-1">
               <Button variant="outline" size="lg" className="w-full h-12 rounded-full border-border bg-card/90 text-foreground font-semibold text-sm hover:bg-card transition-all">
-                Explore Live Platform
+                Explore Platform Demo
               </Button>
             </a>
           </div>
@@ -433,13 +484,13 @@ export default function LandingPage() {
                 <Star className="w-3.5 h-3.5 fill-current" />
                 <Star className="w-3.5 h-3.5 fill-current" />
               </div>
-              <span className="font-semibold text-foreground ml-1">4.9/5 rating</span>
+              <span className="font-semibold text-foreground ml-1">4.9/5 satisfaction</span>
               <span>from 340+ verified Surat locals</span>
             </div>
           </div>
         </div>
 
-        {/* HERO INTERACTIVE APP VIEWPORT (Stagger Scale Onload) */}
+        {/* HERO INTERACTIVE APP VIEWPORT (Accurate to Real App Features) */}
         <div
           id="hero-viewport"
           className="rounded-3xl app-glass-card overflow-hidden border border-border shadow-xl relative transition-all animate-reveal-scale [animation-delay:680ms] opacity-0 [animation-fill-mode:forwards]"
@@ -453,11 +504,11 @@ export default function LandingPage() {
                 <span className="w-3 h-3 rounded-full bg-success/80" />
               </div>
               <span className="text-xs font-mono text-muted-foreground hidden sm:inline">
-                citycircle-surat.app/live-hub
+                citycircle-surat.vercel.app/dashboard
               </span>
             </div>
 
-            {/* Interactive View Selector */}
+            {/* Interactive View Selector (Feed, Map, Trends) */}
             <div className="flex items-center p-1 rounded-xl bg-background border border-border text-xs font-semibold">
               <button
                 onClick={() => setHeroView('feed')}
@@ -468,40 +519,40 @@ export default function LandingPage() {
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Live Feed</span>
+                <span>Circles & Feed</span>
               </button>
               <button
-                onClick={() => setHeroView('radar')}
+                onClick={() => setHeroView('map')}
                 className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  heroView === 'radar'
+                  heroView === 'map'
                     ? 'bg-primary text-primary-foreground font-bold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Radio className="w-3.5 h-3.5" />
-                <span>Surat Radar</span>
+                <MapPin className="w-3.5 h-3.5" />
+                <span>City Map & Meetups</span>
               </button>
               <button
-                onClick={() => setHeroView('events')}
+                onClick={() => setHeroView('trends')}
                 className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  heroView === 'events'
+                  heroView === 'trends'
                     ? 'bg-primary text-primary-foreground font-bold shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Upcoming Meetups</span>
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>r/surat Trends</span>
               </button>
             </div>
           </div>
 
           {/* Viewport Body */}
           <div className="p-4 sm:p-7 min-h-[420px] bg-card">
-            {/* VIEW 1: LIVE FEED & AUDIO STAGES */}
+            {/* VIEW 1: CIRCLES FEED WITH WHATSAPP-STYLE CONTROLS */}
             {heroView === 'feed' && (
               <div>
                 {/* Channel Selector Chips */}
-                <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-none">
                   {HERO_FEED_DATA.map((ch) => {
                     const isSelected = activeChannelId === ch.id;
                     return (
@@ -522,30 +573,16 @@ export default function LandingPage() {
                   })}
                 </div>
 
-                {/* Live Voice Stage Banner */}
-                {activeChannel.audioRoom.active && (
-                  <div className="mb-5 p-3.5 rounded-2xl bg-secondary/80 border border-primary/20 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 animate-pulse">
-                        <Volume2 className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.2 rounded-full border border-primary/20">
-                            Live Voice Stage
-                          </span>
-                          <span className="text-xs font-bold text-foreground">{activeChannel.audioRoom.title}</span>
-                        </div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">
-                          {activeChannel.upcomingEvent}
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-bold text-primary px-3 py-1 rounded-xl bg-primary/10 border border-primary/20 hidden sm:inline">
-                      {activeChannel.audioRoom.listeners} Listening
-                    </span>
+                {/* WhatsApp-Style Capacity & Approval Notice Bar */}
+                <div className="mb-5 p-3 rounded-xl bg-muted/60 border border-border flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+                    <span>Circle Status: <strong className="text-foreground">{activeChannel.capStatus}</strong></span>
                   </div>
-                )}
+                  <span className="text-[11px] font-mono text-primary font-bold px-2 py-0.5 rounded bg-primary/10">
+                    No Phone Leak
+                  </span>
+                </div>
 
                 {/* Simulated Feed Posts */}
                 <div className="space-y-3.5 max-w-2xl mx-auto">
@@ -576,7 +613,7 @@ export default function LandingPage() {
                             {post.content}
                           </p>
 
-                          {/* Interactive Vector Action Counters */}
+                          {/* Upvotes & Bookmarks */}
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleUpvote(postKey)}
@@ -595,7 +632,6 @@ export default function LandingPage() {
                     );
                   })}
 
-                  {/* Typing Pulse Indicator */}
                   <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground">
                     <span className="flex gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
@@ -608,60 +644,57 @@ export default function LandingPage() {
               </div>
             )}
 
-            {/* VIEW 2: SURAT PROXIMITY RADAR MATRIX */}
-            {heroView === 'radar' && (
+            {/* VIEW 2: INTERACTIVE CITY MAP & SPATIAL JITTER */}
+            {heroView === 'map' && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
                   <div>
                     <div className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <Radio className="w-4 h-4 text-primary animate-pulse" />
-                      <span>Surat Proximity Matrix & Active Beacons</span>
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <span>Interactive Surat City Map & Meetup Pins</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Live anonymized density heatmap. Exact GPS is never stored.
+                      Click any pin to view meetup details. Spatial jitter protects exact home addresses.
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground">Fuzzing Radius:</span>
+                    <span className="text-xs font-semibold text-muted-foreground">Spatial Jitter:</span>
                     <div className="flex p-0.5 rounded-xl bg-muted border border-border text-xs">
                       <button
-                        onClick={() => setFuzzRadius(300)}
+                        onClick={() => setFuzzRadius(400)}
                         className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                          fuzzRadius === 300 ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground'
+                          fuzzRadius === 400 ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground'
                         }`}
                       >
-                        300m (Venue)
+                        400m (Venue)
                       </button>
                       <button
-                        onClick={() => setFuzzRadius(500)}
+                        onClick={() => setFuzzRadius(800)}
                         className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                          fuzzRadius === 500 ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground'
+                          fuzzRadius === 800 ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground'
                         }`}
                       >
-                        500m (Neighborhood)
+                        800m (District)
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Radar Grid Canvas */}
+                {/* Map Grid Canvas with SVG Tapi River */}
                 <div className="relative h-72 sm:h-80 w-full rounded-2xl bg-secondary/40 border border-border overflow-hidden flex items-center justify-center">
-                  {/* Glowing Radar Concentric Rings */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                     <div className="w-36 h-36 rounded-full border border-primary animate-pulse-radar" />
                     <div className="w-64 h-64 rounded-full border border-primary/60" />
                     <div className="w-96 h-96 rounded-full border border-primary/30" />
-                    <div className="w-full h-full border border-primary/20" />
                   </div>
 
-                  {/* Stylized Tapi River SVG Graphic */}
                   <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M 0 160 Q 250 80 500 180 T 1000 120" fill="none" stroke="#0F5257" strokeWidth="12" />
                     <path d="M 0 160 Q 250 80 500 180 T 1000 120" fill="none" stroke="#0F5257" strokeWidth="2" strokeDasharray="6 6" />
                   </svg>
 
-                  {/* Hotspot Beacons */}
+                  {/* Hotspot Pins */}
                   {RADAR_NODES.map((node) => {
                     const isSelected = selectedNodeId === node.id;
                     return (
@@ -672,11 +705,10 @@ export default function LandingPage() {
                         className="absolute -translate-x-1/2 -translate-y-1/2 group transition-all z-10"
                       >
                         <div className="relative flex items-center justify-center">
-                          {/* Fuzz Radius Visual Aura */}
                           <span
                             className={`absolute rounded-full border border-primary/30 bg-primary/10 transition-all ${
                               isSelected
-                                ? fuzzRadius === 500 ? 'w-24 h-24 scale-125' : 'w-16 h-16 scale-110'
+                                ? fuzzRadius === 800 ? 'w-24 h-24 scale-125' : 'w-16 h-16 scale-110'
                                 : 'w-10 h-10 opacity-40 group-hover:opacity-80'
                             }`}
                           />
@@ -713,57 +745,57 @@ export default function LandingPage() {
               </div>
             )}
 
-            {/* VIEW 3: REAL-WORLD MEETUPS & RSVP CARDS */}
-            {heroView === 'events' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-2">
-                {LANDING_MEETUPS.map((meetup) => (
-                  <div
-                    key={meetup.id}
-                    className="p-5 rounded-2xl bg-secondary/40 border border-border flex flex-col justify-between hover:border-primary/40 hover:shadow-md transition-all"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md">
-                          {meetup.group_name}
-                        </span>
-                        <span className="text-xs font-black text-accent bg-accent/15 px-2.5 py-0.5 rounded-md">
-                          {meetup.ticket_price === 0 ? 'FREE RSVP' : `₹${meetup.ticket_price}`}
-                        </span>
-                      </div>
-                      <h4 className="text-base font-bold text-foreground mb-1.5">{meetup.title}</h4>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{meetup.description}</p>
-                    </div>
-
-                    <div className="space-y-3 pt-3 border-t border-border/70">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span className="truncate">{meetup.place}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-foreground">
-                          {meetup.rsvps_count} / {meetup.capacity} Going
-                        </span>
-                        <Link href="/meetups">
-                          <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-8 px-3.5">
-                            RSVP Now
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
+            {/* VIEW 3: REDDIT r/surat REAL CITY TRENDS */}
+            {heroView === 'trends' && (
+              <div className="space-y-3.5 py-1">
+                <div className="flex items-center justify-between pb-2 border-b border-border text-xs">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    <span className="font-bold text-foreground">Live r/surat Community Discussions</span>
                   </div>
-                ))}
+                  <span className="text-[11px] text-muted-foreground font-mono">Auto-synced from Reddit</span>
+                </div>
+
+                <div className="space-y-3">
+                  {REAL_TRENDS_DATA.map((trend) => (
+                    <div
+                      key={trend.id}
+                      className="p-4 rounded-2xl bg-secondary/40 border border-border hover:border-primary/40 hover:shadow-xs transition-all"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                            {trend.source}
+                          </span>
+                          <span className="text-xs font-semibold text-muted-foreground">{trend.category}</span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">{trend.time}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-foreground mb-1">{trend.title}</h4>
+                      <p className="text-xs text-muted-foreground mb-2.5">{trend.snippet}</p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1 font-semibold text-foreground">
+                          <ThumbsUp className="w-3.5 h-3.5 text-primary" /> {trend.upvotes} upvotes
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" /> {trend.comments} comments
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* CONTINUOUS MARQUEE TICKER (Vector Icons, No Emojis) */}
+      {/* CONTINUOUS MARQUEE TICKER (Clean Vector Icons) */}
       <div className="w-full bg-muted/50 border-y border-border py-3.5 overflow-hidden">
         <div className="animate-marquee items-center gap-8 text-xs font-semibold text-muted-foreground">
           <div className="flex items-center gap-2">
             <Zap className="w-3.5 h-3.5 text-primary" />
-            <span className="text-foreground">Surat Tech Circle hosted AI Mixer at Vesu</span>
+            <span className="text-foreground">Surat Tech Circle hosted AI Builders Mixer at Vesu</span>
           </div>
           <span className="text-border">/</span>
           <div className="flex items-center gap-2">
@@ -795,7 +827,7 @@ export default function LandingPage() {
       </div>
 
       {/* BENTO GRID ("Architecture of Trust") */}
-      <section id="guilds" className="py-16 md:py-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
+      <section id="circles" className="py-16 md:py-24 px-4 sm:px-6 max-w-6xl mx-auto w-full">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
             Architecture of Trust
@@ -821,7 +853,7 @@ export default function LandingPage() {
                 </span>
               </div>
 
-              {/* Guild Selector Chips */}
+              {/* Circle Selector Chips */}
               <div className="flex flex-wrap gap-2 mb-6">
                 {CATEGORIES.map((cat) => {
                   const cfg = CATEGORY_CONFIG[cat];
@@ -864,16 +896,23 @@ export default function LandingPage() {
                 </div>
 
                 <div className="p-5">
-                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-1.5">{activeBentoGroup.name}</h3>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h3 className="text-base sm:text-lg font-bold text-foreground">{activeBentoGroup.name}</h3>
+                    {activeBentoGroup.require_approval && (
+                      <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                        Approval Required
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
                     {activeBentoGroup.description}
                   </p>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border text-xs">
                     <span className="text-muted-foreground">Host: <strong className="text-foreground">{activeBentoGroup.admin_name}</strong></span>
-                    <Link href={`/groups/${activeBentoGroup.id}`}>
+                    <Link href={`/groups`}>
                       <Button size="sm" variant="outline" className="text-xs font-bold h-8 px-3.5 hover:bg-primary hover:text-primary-foreground">
-                        Preview Circle
+                        Explore Circles
                         <ArrowRight className="w-3.5 h-3.5 ml-1" />
                       </Button>
                     </Link>
@@ -896,7 +935,7 @@ export default function LandingPage() {
               </div>
 
               <h3 className="text-xl font-bold font-heading text-foreground mb-2">
-                Server-Side GPS Fuzzing
+                Spatial Jitter & Zero Phone Leaks
               </h3>
               <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
                 Raw coordinates and phone numbers are isolated and never broadcasted to peers.
@@ -979,10 +1018,10 @@ export default function LandingPage() {
               </div>
 
               <h3 className="text-xl font-bold font-heading text-foreground mb-2">
-                Unlock ₹0 Free Founding Access
+                Unlock Founding Member Status
               </h3>
               <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
-                Click one of our partner codes to auto-validate and claim your lifetime founding pass:
+                Click one of our partner codes to auto-validate and claim your lifetime verified founding badge:
               </p>
 
               {/* Quick Code Buttons */}
@@ -1021,7 +1060,7 @@ export default function LandingPage() {
               {promoStatus === 'valid' && (
                 <div className="p-3 bg-success/15 border border-success/30 rounded-xl text-xs text-success font-semibold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>Valid Code! VIP ₹0 Founding Pass unlocked.</span>
+                  <span>Valid Code! Founding Pass unlocked for registration.</span>
                 </div>
               )}
               {promoStatus === 'invalid' && (
@@ -1084,6 +1123,53 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* HOW IT WORKS (3 SIMPLE STEPS) */}
+      <section id="how-it-works" className="py-16 md:py-20 px-4 sm:px-6 max-w-6xl mx-auto w-full border-t border-border">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
+            Simple Workflow
+          </div>
+          <h2 className="text-3xl font-bold font-heading text-foreground tracking-tight mb-3">
+            How CityCircle Works
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Get started in under 60 seconds with email verification.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 sm:p-7 rounded-3xl app-glass-card space-y-4">
+            <div className="w-10 h-10 rounded-2xl bg-primary/15 text-primary flex items-center justify-center font-black text-base">
+              1
+            </div>
+            <h3 className="text-base font-bold text-foreground">Verify & Choose Neighborhood</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Verify your residency with a secure 6-digit OTP and pick your primary neighborhood zone (Vesu, Piplod, Adajan, Pal, etc.).
+            </p>
+          </div>
+
+          <div className="p-6 sm:p-7 rounded-3xl app-glass-card space-y-4">
+            <div className="w-10 h-10 rounded-2xl bg-accent/20 text-accent-foreground flex items-center justify-center font-black text-base">
+              2
+            </div>
+            <h3 className="text-base font-bold text-foreground">Join Capped Circles or Host Meetups</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Enter focused interest circles with hard participant caps (50–256) or drop a pin on the live city map to organize coffee and cycling gatherings.
+            </p>
+          </div>
+
+          <div className="p-6 sm:p-7 rounded-3xl app-glass-card space-y-4">
+            <div className="w-10 h-10 rounded-2xl bg-primary/15 text-primary flex items-center justify-center font-black text-base">
+              3
+            </div>
+            <h3 className="text-base font-bold text-foreground">Connect Without Contact Leaks</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Chat in real time with peers, RSVP to offline events, and stay updated with r/surat trends while your phone number and exact GPS remain private.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* SURAT LOCAL VOICES */}
       <section className="py-16 md:py-20 px-4 sm:px-6 max-w-6xl mx-auto w-full border-t border-border">
         <div className="text-center max-w-2xl mx-auto mb-12">
@@ -1113,7 +1199,7 @@ export default function LandingPage() {
 
           <div className="p-6 rounded-3xl app-glass-card flex flex-col justify-between">
             <p className="text-xs sm:text-sm text-foreground/90 italic leading-relaxed mb-6">
-              &quot;The 300–500m location fuzzing gives complete peace of mind. Great for sunrise Dumas cycling squads.&quot;
+              &quot;The 400m spatial jitter gives complete peace of mind. Great for sunrise Dumas cycling squads without sharing phone numbers.&quot;
             </p>
             <div className="flex items-center gap-3 pt-4 border-t border-border">
               <div className="w-9 h-9 rounded-full bg-accent/20 text-accent-foreground flex items-center justify-center font-bold text-xs">
@@ -1161,9 +1247,9 @@ export default function LandingPage() {
             { id: 'all', label: 'All Questions' },
             { id: 'general', label: 'General' },
             { id: 'privacy', label: 'Privacy & GPS' },
+            { id: 'trends', label: 'r/surat Trends' },
             { id: 'meetups', label: 'Meetups' },
             { id: 'safety', label: 'Safety & IT Rules' },
-            { id: 'membership', label: 'VIP Pass' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1224,6 +1310,15 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+            <Link href="/groups" className="hover:text-primary transition-colors">
+              Circles
+            </Link>
+            <Link href="/map" className="hover:text-primary transition-colors">
+              Live Map
+            </Link>
+            <Link href="/trends" className="hover:text-primary transition-colors">
+              Trends
+            </Link>
             <Link href="/grievance" className="hover:text-primary transition-colors underline">
               Grievance Officer (IT Rules 2021)
             </Link>
@@ -1233,7 +1328,7 @@ export default function LandingPage() {
               rel="noreferrer"
               className="hover:text-primary transition-colors font-mono text-[11px] px-2 py-0.5 rounded bg-muted border border-border"
             >
-              llms.txt (AI Knowledge)
+              llms.txt
             </a>
             <Link href="/admin" className="hover:text-primary transition-colors">
               Admin Portal
