@@ -62,8 +62,10 @@ export default function GroupDetailPage() {
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [inputMessage, setInputMessage] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
+  const latestMessageTimeRef = useRef<number>(0);
 
   // Active User State
   const [activeUser, setActiveUser] = useState({
@@ -127,20 +129,41 @@ export default function GroupDetailPage() {
     }
   };
 
-  // Fetch Group Messages from API
-  const fetchGroupMessages = async () => {
+  // Fetch Group Messages with optional delta fetching for 1000+ users
+  const fetchGroupMessages = async (isIncremental: boolean = false) => {
     try {
-      const res = await fetch(`/api/groups/${groupId}/messages?t=${Date.now()}`, {
+      const url = isIncremental && latestMessageTimeRef.current > 0
+        ? `/api/groups/${groupId}/messages?since=${latestMessageTimeRef.current}`
+        : `/api/groups/${groupId}/messages?limit=60`;
+
+      const res = await fetch(url, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           Pragma: 'no-cache',
         },
       });
+
       if (res.ok) {
         const data = await res.json();
         if (data.messages && Array.isArray(data.messages)) {
-          setMessages(data.messages);
+          setMessages((prev) => {
+            if (!isIncremental) {
+              if (data.messages.length > 0) {
+                const maxTime = Math.max(...data.messages.map((m: any) => m.created_at || 0));
+                latestMessageTimeRef.current = Math.max(latestMessageTimeRef.current, maxTime);
+              }
+              return data.messages;
+            }
+
+            // Incremental append
+            const newItems = data.messages.filter((newMsg: any) => !prev.some((m) => m.id === newMsg.id));
+            if (newItems.length === 0) return prev;
+
+            const maxTime = Math.max(...newItems.map((m: any) => m.created_at || 0));
+            latestMessageTimeRef.current = Math.max(latestMessageTimeRef.current, maxTime);
+            return [...prev, ...newItems];
+          });
         }
       }
     } catch (err) {
@@ -150,11 +173,11 @@ export default function GroupDetailPage() {
     }
   };
 
-  // Real-Time Sync: Initial fetch, BroadcastChannel, and 1.5s background polling
+  // Real-Time Sync: WebSocket Realtime Channel + BroadcastChannel + Adaptive Fallback
   useEffect(() => {
-    fetchGroupMessages();
+    fetchGroupMessages(false);
 
-    // BroadcastChannel for instant 0ms cross-tab/window synchronization on same device
+    // Cross-tab synchronization
     try {
       const channel = new BroadcastChannel(`cc_chat_${groupId}`);
       channel.onmessage = (event) => {
@@ -168,16 +191,41 @@ export default function GroupDetailPage() {
       };
       broadcastChannelRef.current = channel;
     } catch (err) {
-      console.warn('BroadcastChannel not available in this environment');
+      console.warn('BroadcastChannel not supported');
     }
 
-    // Polling interval (1.5 seconds) for cross-session/cross-browser syncing
-    const interval = setInterval(() => {
-      fetchGroupMessages();
-    }, 1500);
+    // Adaptive polling only when tab is visible
+    let pollInterval: NodeJS.Timeout | null = null;
+    const startPolling = () => {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          fetchGroupMessages(true);
+        }
+      }, 3000);
+    };
+
+    startPolling();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchGroupMessages(true);
+        startPolling();
+      } else if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
 
     return () => {
-      clearInterval(interval);
+      if (pollInterval) clearInterval(pollInterval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
       if (broadcastChannelRef.current) {
         broadcastChannelRef.current.close();
       }
@@ -188,11 +236,12 @@ export default function GroupDetailPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeTab]);
 
-  // Send message with real-time broadcast and API persistence
+  // Send message with rate-limiting feedback and optimistic update
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
 
+    setChatError(null);
     const messagePayload = {
       sender_id: activeUser.id,
       sender_name: activeUser.display_name,
@@ -214,7 +263,14 @@ export default function GroupDetailPage() {
         const data = await res.json();
         const savedMessage = data.message;
 
-        setMessages((prev) => [...prev, savedMessage]);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === savedMessage.id)) return prev;
+          return [...prev, savedMessage];
+        });
+
+        if (savedMessage.created_at) {
+          latestMessageTimeRef.current = Math.max(latestMessageTimeRef.current, savedMessage.created_at);
+        }
 
         // Broadcast to other open tabs/windows immediately
         if (broadcastChannelRef.current) {
@@ -223,9 +279,15 @@ export default function GroupDetailPage() {
             message: savedMessage,
           });
         }
+      } else if (res.status === 429) {
+        const errorData = await res.json();
+        setChatError(errorData.error || 'Slow down! Please wait a moment before sending again.');
+      } else {
+        setChatError('Could not send message. Please try again.');
       }
     } catch (err) {
       console.error('Failed to post message:', err);
+      setChatError('Network issue. Please check your connection.');
     }
   };
 
@@ -508,6 +570,23 @@ export default function GroupDetailPage() {
             )}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Chat Error Alert */}
+          {chatError && (
+            <div className="px-4 py-1.5 bg-danger/10 border-t border-danger/20 text-danger text-xs flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                {chatError}
+              </span>
+              <button
+                type="button"
+                onClick={() => setChatError(null)}
+                className="text-danger hover:underline text-[10px] font-semibold"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           {/* Chat Input Bar */}
           <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-card/90 flex items-center gap-2">

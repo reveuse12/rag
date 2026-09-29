@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendOTP } from '@/lib/email';
 import { otpStore } from '@/lib/otp-store';
+import { rateLimiter } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1';
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    // Rate limiting: max 3 OTP requests per minute
+    const rateKey = `otp:${email.toLowerCase().trim()}:${ip}`;
+    const limitCheck = rateLimiter.check(rateKey, 3, 60_000);
+    if (!limitCheck.success) {
+      return NextResponse.json(
+        { error: 'Too many OTP requests. Please wait a minute before requesting another code.' },
+        { status: 429 }
+      );
     }
 
     // Generate 6-digit OTP
