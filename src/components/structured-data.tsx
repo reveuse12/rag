@@ -1,7 +1,7 @@
 import React from 'react';
 
 export function StructuredData() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://rag-local.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://citycircle-surat.vercel.app';
 
   // 1. Organization & Community Schema
   const organizationSchema = {
